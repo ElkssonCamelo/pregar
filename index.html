@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Pregar — Meu acervo de pregações</title>
+<meta name="theme-color" content="#1f3a5f">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header id="top">
+  <a href="#/" class="brand">✝ Pregar</a>
+  <nav id="nav">
+    <a href="#/" data-r="home">Acervo</a>
+    <a href="#/agenda" data-r="agenda">Agenda</a>
+    <a href="#/ilus" data-r="ilus">Ilustrações</a>
+    <a href="#/datas" data-r="datas">Datas</a>
+    <a href="#/oracao" data-r="oracao">Oração</a>
+    <a href="#/plano" data-r="plano">Leitura</a>
+    <a href="#/biblia" data-r="biblia">Bíblia</a>
+    <a href="#/stats" data-r="stats">Estatísticas</a>
+    <a href="#/backup" data-r="backup">Backup</a>
+    <a href="#/ajustes" data-r="ajustes">Ajustes</a>
+  </nav>
+  <span id="syncst" class="mute" style="margin-left:auto;font-size:13px;color:#dbe5f3"></span>
+  <button id="th" title="Tema claro/escuro">🌓</button>
+</header>
+<main id="app"></main>
+<div id="toast"></div>
+<script src="docx.js"></script>
+<script src="app.js"></script>
+<script src="importer.js"></script>
+<script src="ajustes.js"></script>
+<script src="config.js"></script>
+<script src="synccore.js"></script>
+<script src="sync.js"></script>
+</body>
+</html>

@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Projetor — Pregar</title>
+<style>
+html,body{margin:0;height:100%;background:#000;color:#fff;font-family:Georgia,'Times New Roman',serif;overflow:hidden}
+#s{height:100%;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:5vh 7vw;box-sizing:border-box}
+#t{font-size:6vw;font-weight:bold;color:#f4e4b0;margin:0 0 3vh;line-height:1.1}
+#b{font-size:4vw;line-height:1.35;white-space:pre-wrap;margin:0}
+#hint{position:fixed;bottom:8px;right:12px;font:12px sans-serif;color:#555;cursor:pointer}
+.verse #b{font-style:italic}
+</style></head>
+<body>
+<div id="s"><h1 id="t">Aguardando…</h1><p id="b"></p></div>
+<img id="lg" style="position:fixed;right:2vw;bottom:3vh;max-height:12vh;max-width:20vw;display:none">
+<div id="hint" onclick="document.documentElement.requestFullscreen()">⛶ tela cheia (F)</div>
+<script>
+const ch = new BroadcastChannel('pregar-proj');
+let sc = 1;
+const s = document.getElementById('s'), t = document.getElementById('t'), b = document.getElementById('b');
+function fit() {
+  let size = 4.2 * sc; b.style.fontSize = size + 'vw';
+  while (s.scrollHeight > innerHeight && size > 1.2) { size -= 0.2; b.style.fontSize = size + 'vw'; }
+}
+ch.onmessage = e => {
+  const m = e.data;
+  if (m.type === 'slide') { s.style.visibility = 'visible'; s.className = m.kind || '';
+    const th = m.theme || {}; sc = th.scale || 1;
+    s.style.background = th.bg || '#000'; s.style.color = th.text || '#fff'; s.style.fontFamily = th.font || '';
+    s.style.textAlign = th.align || 'center'; s.style.alignItems = th.align === 'left' ? 'flex-start' : 'center';
+    t.style.color = th.accent || '#f4e4b0'; t.style.fontSize = 6 * sc + 'vw';
+    const lg = document.getElementById('lg'); if (th.logo) { lg.src = th.logo; lg.style.display = 'block'; } else lg.style.display = 'none';
+    document.body.style.background = th.bg ? '' : '#000'; t.textContent = m.title || ''; b.textContent = m.body || ''; fit(); }
+  if (m.type === 'black') s.style.visibility = 'hidden';
+};
+addEventListener('keydown', e => { if (e.key === 'f' || e.key === 'F') document.documentElement.requestFullscreen(); else ch.postMessage({ type: 'key', key: e.key }); });
+addEventListener('resize', fit);
+ch.postMessage({ type: 'hello' });
+</script></body></html>

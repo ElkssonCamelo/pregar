@@ -1,0 +1,11 @@
+{
+  "name": "Pregar — Acervo de Pregações",
+  "short_name": "Pregar",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#1f3a5f",
+  "theme_color": "#1f3a5f",
+  "lang": "pt-BR",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+}
