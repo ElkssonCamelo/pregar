@@ -25,7 +25,7 @@
 - ~~Backup automático~~ (feito: pontos de restauração + pasta no Chrome/Edge)
 
 ## Uso no tablet (decisão pendente)
-- [ ] **Publicar em HTTPS** (Vercel ou GitHub Pages): sem isso o tablet não instala o app, não funciona offline, não mantém a tela acesa e não grava áudio.
+- [x] **Publicado em HTTPS** (Vercel, 2026-10-02): https://pregar-eight.vercel.app — projeto `pregar` na equipe `juntos-sim`. Para atualizar: `npx vercel deploy --prod --yes` na pasta do app (subir a versão do cache em `sw.js` antes). Ao ligar o login, usar essa URL como Site URL / Redirect URL no Supabase.
 - [ ] **Levar as pregações para o tablet**: provisório = backup em pasta da nuvem no computador + Backup > Importar no tablet; definitivo = sincronização Supabase.
 - [ ] Botão "Levar para o tablet" (exportar só uma pregação, com slides e imagens, para importar no tablet) — opcional, enquanto não houver sincronização.
 - [ ] **Telão com o tablet**: espelhar a tela mostraria as anotações ao público; o correto é o tablet como controle remoto e outro aparelho no projetor (QR Code / Supabase Realtime).
