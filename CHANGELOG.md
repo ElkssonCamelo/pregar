@@ -2,6 +2,16 @@
 
 Formato: [versão] - data. Versão 0.x = em construção (a sincronização na nuvem ainda não está ligada).
 
+## [0.12.0] - 2026-10-03
+### Adicionado
+- **Sincronização ligada** ao Supabase (projeto `pregar`, região São Paulo, conta nova): login por e-mail em Ajustes > Conta e sincronização; pregações (com materiais), ilustrações, pedidos de oração, planos, datas, assistentes e perfil sincronizam entre aparelhos.
+- Banco: tabela `items` com RLS por usuário aplicada e verificada (usuário A não vê/altera dados do B; anônimo bloqueado; "vale o mais novo" e lápides conferidos; verificador de segurança do Supabase sem alertas).
+
+### Pendente para funcionar de ponta a ponta (painel do Supabase, feito pelo usuário)
+- Authentication > URL Configuration: Site URL `https://pregar-eight.vercel.app` e Redirect URLs `https://pregar-eight.vercel.app/**` e `http://localhost:8123/**`.
+- (Recomendado) incluir `{{ .Token }}` no modelo de e-mail "Magic Link" para entrar com código de 6 dígitos.
+- Após o primeiro login: desligar "Allow new users to sign up" (impede que desconhecidos criem conta no seu projeto).
+
 ## [0.11.1] - 2026-10-03
 ### Corrigido
 - **Tela em branco na primeira abertura do site publicado** (conexão mais lenta): o app começava a montar a tela antes de todos os scripts terminarem de carregar (`teleprompter is not defined`, `autoBackup is not defined`) e o modo offline nem chegava a ativar. Agora o início espera todos os scripts (DOMContentLoaded).
