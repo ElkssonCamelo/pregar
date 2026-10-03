@@ -2,6 +2,10 @@
 
 Formato: [versão] - data. Versão 0.x = em construção (a sincronização na nuvem ainda não está ligada).
 
+## [0.14.1] - 2026-10-03
+### Alterado
+- Tamanho mínimo da senha passou a **10 caracteres** (igual ao "Minimum password length" do Supabase): tela de criar conta, janela de nova senha e mensagens. Valor em `config.js` (`minPassword`). Mensagem de erro do servidor (senha fraca) agora explica a regra.
+
 ## [0.14.0] - 2026-10-03
 ### Adicionado
 - **Sincronização automática quase instantânea**: o que é criado/alterado no computador sobe sozinho em até ~1,5 s (mesmo digitando sem parar, antes esperava você parar) e **aparece no outro aparelho em poucos segundos, sem recarregar**, pela **atualização ao vivo** (Supabase Realtime, `vendor/supabase.js`, supabase-js oficial, MIT). Cabeçalho mostra "☁ ao vivo".

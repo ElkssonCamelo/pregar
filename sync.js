@@ -9,6 +9,7 @@ const getSession = () => JSON.parse(localStorage.getItem('sbSession') || 'null')
 const setSession = s => s ? localStorage.setItem('sbSession', JSON.stringify(s)) : localStorage.removeItem('sbSession');
 const sbUrl = p => sbCfg().supabaseUrl.replace(/\/$/, '') + p;
 class SyncAuthError extends Error {}
+const MIN_PW = () => +sbCfg().minPassword || 10; // tamanho mínimo da senha (igual ao configurado no Supabase)
 
 async function refreshSession() {
   const s = getSession(); if (!s || !s.refresh_token) throw new SyncAuthError('sessão expirada');
@@ -42,7 +43,7 @@ async function authError(r, fallback) { // mensagens do Supabase em português
   if (/not confirmed/.test(raw) || code === 'email_not_confirmed') return 'Este e-mail ainda não foi confirmado: abra o e-mail de confirmação e clique no link.';
   if (/signups? (not allowed|disabled)|signup is disabled/.test(raw) || code === 'signup_disabled') return 'Novos cadastros estão desativados neste app. Use uma conta que já existe.';
   if (/already registered|already been registered/.test(raw) || code === 'user_already_exists') return 'Este e-mail já tem conta: use "Já tenho conta".';
-  if (/password/.test(raw) && /(least|short|weak|characters)/.test(raw)) return 'A senha é curta ou fraca demais. Use pelo menos 8 caracteres.';
+  if (/password/.test(raw) && /(least|short|weak|characters)/.test(raw)) return `A senha não atende às regras: use pelo menos ${MIN_PW()} caracteres, misturando letras e números (e maiúsculas e símbolos, se o projeto exigir).`;
   if (/rate limit|too many|over_.*rate/.test(raw) || r.status === 429) return 'Muitas tentativas. Espere alguns minutos e tente de novo.';
   return fallback + (j.msg ? ' (' + j.msg + ')' : '');
 }
@@ -66,12 +67,12 @@ async function setNewPassword(password) {
 }
 function newPasswordModal(title) {
   const m = document.createElement('div'); m.className = 'modal';
-  m.innerHTML = `<div style="max-width:420px"><h2>${esc(title || 'Nova senha')}</h2><form id="npf"><label>Nova senha (mínimo 8 caracteres)</label><input id="np1" type="password" autocomplete="new-password"><label>Repita a nova senha</label><input id="np2" type="password" autocomplete="new-password">
+  m.innerHTML = `<div style="max-width:420px"><h2>${esc(title || 'Nova senha')}</h2><form id="npf"><label>Nova senha (mínimo ${MIN_PW()} caracteres)</label><input id="np1" type="password" autocomplete="new-password"><label>Repita a nova senha</label><input id="np2" type="password" autocomplete="new-password">
    <div id="npe" role="alert" style="color:var(--bad);min-height:1.3em;margin:6px 0"></div><div class="row"><button id="nps">Salvar senha</button><button type="button" class="sec" id="npx">Cancelar</button></div></form></div>`;
   document.body.appendChild(m); $('#npx', m).onclick = () => m.remove(); $('#np1', m).focus();
   $('#npf', m).onsubmit = async e => {
     e.preventDefault(); const a = $('#np1', m).value, b = $('#np2', m).value, err = t => $('#npe', m).textContent = t;
-    if (a.length < 8) return err('Use pelo menos 8 caracteres.'); if (a !== b) return err('As duas senhas não são iguais.');
+    if (a.length < MIN_PW()) return err(`Use pelo menos ${MIN_PW()} caracteres.`); if (a !== b) return err('As duas senhas não são iguais.');
     try { await setNewPassword(a); m.remove(); toast('Senha alterada'); } catch (x) { err(x.message); }
   };
 }
@@ -116,7 +117,7 @@ function showLoginGate(optional) {
     app.innerHTML = `<div class="card gate"><h1 style="text-align:center;margin-top:0">✝ Pregar</h1><p class="mute" style="text-align:center">${T[mode][1]}</p>
      <form id="gf" novalidate><label for="ge">E-mail</label><input id="ge" type="email" autocomplete="username" inputmode="email" value="${esc(email)}">
      ${pw ? `<label for="gp">Senha</label><div class="row" style="flex-wrap:nowrap"><input id="gp" type="password" autocomplete="${mode === 'up' ? 'new-password' : 'current-password'}"><button type="button" class="sec" id="gs" aria-label="Mostrar ou esconder a senha">👁</button></div>` : ''}
-     ${mode === 'up' ? '<label for="gp2">Repita a senha</label><input id="gp2" type="password" autocomplete="new-password"><p class="mute" style="font-size:13px">Mínimo de 8 caracteres.</p>' : ''}
+     ${mode === 'up' ? '<label for="gp2">Repita a senha</label><input id="gp2" type="password" autocomplete="new-password"><p class="mute" style="font-size:13px">Mínimo de ' + MIN_PW() + ' caracteres.</p>' : ''}
      <div id="gerr" role="alert" style="margin:8px 0;min-height:1.3em;color:${ok ? 'var(--ok)' : 'var(--bad)'}">${esc(msg || '')}</div>
      <button id="gb" style="width:100%">${T[mode][0]}</button></form>
      <div class="row" style="justify-content:center;margin-top:12px;gap:8px">${mode !== 'in' ? '<button type="button" class="sec sm" data-m="in">Já tenho conta</button>' : ''}${mode !== 'up' ? '<button type="button" class="sec sm" data-m="up">Criar conta</button>' : ''}${mode === 'in' ? '<button type="button" class="sec sm" data-m="forgot">Esqueci a senha</button><button type="button" class="sec sm" data-m="link">Entrar por link</button>' : ''}${optional ? '<button type="button" class="sec sm" data-m="x">Voltar</button>' : ''}</div>
@@ -128,7 +129,7 @@ function showLoginGate(optional) {
       ev.preventDefault(); if (busy) return; email = e.value.trim(); const pw1 = $('#gp') ? $('#gp').value : '', pw2 = $('#gp2') ? $('#gp2').value : '';
       if (!/^\S+@\S+\.\S+$/.test(email)) return draw('Digite um e-mail válido.');
       if (pw && !pw1) return draw('Digite a senha.');
-      if (mode === 'up') { if (pw1.length < 8) return draw('Use pelo menos 8 caracteres na senha.'); if (pw1 !== pw2) return draw('As duas senhas não são iguais.'); }
+      if (mode === 'up') { if (pw1.length < MIN_PW()) return draw(`Use pelo menos ${MIN_PW()} caracteres na senha.`); if (pw1 !== pw2) return draw('As duas senhas não são iguais.'); }
       if (!navigator.onLine) return draw('Sem internet. Para entrar é preciso estar conectado.');
       busy = true; $('#gb').disabled = true; $('#gb').textContent = 'Aguarde…';
       try {
