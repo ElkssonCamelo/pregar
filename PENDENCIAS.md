@@ -1,7 +1,8 @@
 # Pendências do Pregar
 
 ## Dependem de Supabase / Vercel
-- [ ] Sincronização na nuvem e troca de aparelho (Supabase: contas + banco)
+- [x] Sincronização ligada (v0.12.0, 2026-10-03): projeto Supabase `pregar` (org zfezvvcqplasbjbqctwb, sa-east-1, id pedfhqffsqpuwkurziqy), esquema com RLS aplicado e testado. **Falta o usuário no painel do Supabase** (ver CHANGELOG 0.12.0): Site URL + Redirect URLs, modelo de e-mail com `{{ .Token }}`, desligar novos cadastros após o 1º login.
+- [ ] Testar o login e a sincronização de verdade entre computador e tablet (só o usuário pode: depende do e-mail dele).
 - [ ] Publicar o app em HTTPS (Vercel) para instalar no celular
 - [ ] IA para esboço, slides e leitura de foto de caderno (API da Claude via função no servidor; a chave não pode ficar no navegador)
 - [ ] Controle do telão pelo celular por QR Code / código (tempo real via Supabase Realtime)
