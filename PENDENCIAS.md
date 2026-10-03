@@ -44,11 +44,11 @@
 ## Login com senha (v0.13.0, 2026-10-03) — feito e publicado
 - [x] Tela de entrada obrigatória (e-mail e senha), criar conta, esqueci a senha, alterar senha, sair com segurança. Publicado em https://meupregar.vercel.app.
 - [ ] **Painel do Supabase (usuário):** desligar "Confirm email" (Authentication > Sign In / Providers > Email) para entrar logo após criar a conta; configurar Site URL e Redirect URLs (para o e-mail de "esqueci a senha"); depois de criar a PRÓPRIA conta, desligar "Allow new users to sign up".
-- [ ] Testar de verdade (só o usuário): criar conta, entrar, sincronizar entre computador e tablet. Testado só com servidor de mentira.
+- [x] Testado de verdade pelo usuário em 2026-10-03: criar conta, entrar e sincronizar entre computador e tablet (confirmado no banco: 1 pregação + perfil, 1 conta).
 - Emergência: para abrir o app sem a tela de login, em `config.js` trocar `requireLogin: true` por `false` (os dados locais continuam intactos).
 
 ## Sincronização automática (v0.14.0, 2026-10-03) — publicada
 - [x] Envio em ~1,5 s, atualização ao vivo (Realtime), busca de reserva a cada 20 s, reconexão automática.
-- [ ] **Testar de verdade com dois aparelhos logados** (só o usuário): criar no computador e ver aparecer no tablet (cabeçalho "☁ ao vivo" nos dois). O Realtime real só foi testado de forma anônima (conexão abre) e com servidor de mentira.
+- [x] Testado pelo usuário com dois aparelhos logados em 2026-10-03: pregação criada no computador apareceu no tablet (sucesso).
 - [ ] Aviso do Supabase: "Leaked password protection disabled" (proteção contra senhas vazadas): ligar em Authentication > Sign In / Providers > Password security, se estiver disponível no plano; senão usar senha longa e única.
 - Limites conhecidos: edição da MESMA pregação nos dois aparelhos ao mesmo tempo = vale a mais recente (por documento); áudios não sincronizam; iPad pode suspender o app em segundo plano (ao voltar ele sincroniza na hora).
