@@ -2,6 +2,10 @@
 
 Formato: [versão] - data. Versão 0.x = em construção (a sincronização na nuvem ainda não está ligada).
 
+## [0.16.1] - 2026-10-03
+### Alterado
+- Polimento (skill `impeccable-design-polish`): faixas do Acervo mais compactas e discretas (menos peso visual competindo com a lista), títulos de página que ocupam linha própria em telas estreitas, rótulos de filtro menores e animações desligadas para quem prefere menos movimento.
+
 ## [0.16.0] - 2026-10-03
 ### Alterado
 - **Novo visual "manuscrito iluminado"** (skill `frontend-design`): pergaminho com textura leve e tinta, acento em ouro; no escuro, "vigília à luz de vela". Títulos e leitura em **Fraunces** (serifada), interface em **Instrument Sans**, ambas **dentro do app** (`vendor/fonts`, licença OFL; funcionam offline). Frase-chave em ouro e versículos em itálico com filete dourado no modo pregação; teleprompter na mesma serifada.

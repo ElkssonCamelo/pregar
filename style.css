@@ -191,3 +191,12 @@ summary{cursor:pointer}
 .tag a{display:inline-block;padding:4px 6px;margin:-4px -2px}
 .big{max-width:78ch}
 @media (pointer:coarse){button.sm{min-height:44px}.tag a{padding:12px 10px;margin:-12px -6px}label{margin-top:12px}}
+
+/* polimento: faixas do Acervo mais discretas e títulos de página que quebram bem em telas estreitas */
+.banner{padding:9px 12px;margin-bottom:8px;font-size:.95em;box-shadow:none}
+.banner+.banner{margin-top:-2px}
+.banner a{min-height:36px;padding:6px 12px}
+.row>h1[style*="flex:1"]{flex:1 1 100%;min-width:0;margin-bottom:2px}
+@media(min-width:700px){.row>h1[style*="flex:1"]{flex:1 1 auto}}
+.card .grid label{font-size:.82em}
+@media(prefers-reduced-motion:reduce){body.anim *{animation:none!important;transition:none!important}}
