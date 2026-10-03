@@ -2,6 +2,20 @@
 
 Formato: [versão] - data. Versão 0.x = em construção (a sincronização na nuvem ainda não está ligada).
 
+## [0.14.0] - 2026-10-03
+### Adicionado
+- **Sincronização automática quase instantânea**: o que é criado/alterado no computador sobe sozinho em até ~1,5 s (mesmo digitando sem parar, antes esperava você parar) e **aparece no outro aparelho em poucos segundos, sem recarregar**, pela **atualização ao vivo** (Supabase Realtime, `vendor/supabase.js`, supabase-js oficial, MIT). Cabeçalho mostra "☁ ao vivo".
+- **Busca de reserva a cada 20 s** com o app aberto (antes 3 min) e ao voltar para o app; em segundo plano a conexão ao vivo é desligada (bateria e dados). A conexão que cai refaz-se sozinha (espera 5 s a 60 s).
+- Banco: a tabela `items` entrou na publicação do Realtime (`supabase/realtime.sql`, aplicada); as regras por usuário valem também para os avisos.
+
+### Corrigido
+- Uma atualização que chega de outro aparelho agora altera o objeto já aberto: quem está com a pregação aberta no editor não volta a gravar a versão antiga por cima.
+- A tela não é recarregada durante o teleprompter nem o modo pregação quando chegam novidades.
+
+### Testado
+- Com Supabase/Realtime de mentira: envio em 1,5 s, aparecer no Acervo em ~0,3 s, rajada de 6 avisos = 1 busca, edição contínua sem espera infinita, segundo plano/volta, queda e reconexão, token renovado, edição simultânea.
+- Com a biblioteca e o Realtime reais, sem login: conexão abre (`SUBSCRIBED`). NÃO testado: receber avisos de verdade entre dois aparelhos logados (depende do login do usuário).
+
 ## [0.13.1] - 2026-10-03
 ### Corrigido
 - **Instalação no tablet**: o app só tinha ícone SVG e nenhum ícone para iPad (no iPad o atalho saía com uma miniatura da página e no Android a instalação podia nem ser oferecida). Agora há ícones PNG (192, 512, maskable 512 e apple-touch 180) com a cruz do app, `id` e `orientation` no manifesto e as metatags do iOS (tela cheia, nome "Pregar").

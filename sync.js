@@ -15,7 +15,7 @@ async function refreshSession() {
   const r = await fetch(sbUrl('/auth/v1/token?grant_type=refresh_token'), { method: 'POST', headers: { apikey: sbCfg().supabaseKey, 'Content-Type': 'application/json' }, body: JSON.stringify({ refresh_token: s.refresh_token }) });
   if (!r.ok) { if (r.status === 400 || r.status === 401) { setSession(null); throw new SyncAuthError('sessão expirada'); } throw new Error('falha ao renovar sessão (' + r.status + ')'); }
   const j = await r.json(); const n = { access_token: j.access_token, refresh_token: j.refresh_token, expires_at: Math.floor(Date.now() / 1000) + (j.expires_in || 3600), user: j.user ? { id: j.user.id, email: j.user.email } : s.user };
-  setSession(n); return n;
+  setSession(n); if (typeof rtSetAuth === 'function') rtSetAuth(n.access_token); return n;
 }
 async function freshSession() { const s = getSession(); if (!s) return null; return s.expires_at - Date.now() / 1000 < 60 ? refreshSession() : s; }
 async function sbFetch(path, opt = {}, auth = true, retry = true) {
@@ -98,10 +98,11 @@ async function finishLogin(s) {
   if (prev && prev !== s.user.id && hasLocalData() && confirm('Este aparelho tem dados de OUTRA conta.\n\nOK = apagar os dados deste aparelho e entrar limpo (recomendado).\nCancelar = manter e juntar tudo à conta que está entrando.')) await wipeLocalData();
   if (localStorage.getItem('syncUser') !== s.user.id) { localStorage.removeItem('syncCursor'); localStorage.setItem('syncDirty', '{}'); } // outra conta: começa do zero
   localStorage.setItem('syncUser', s.user.id); setSession(s); await markAllDirty(); toast('Conectado como ' + s.user.email);
-  route(); syncNow(); // route() também tira a tela de entrada
+  route(); syncNow(); startRealtime(); // route() também tira a tela de entrada
 }
 async function syncLogout() {
   try { await sbFetch('/auth/v1/logout', { method: 'POST' }); } catch { /* sem rede: sai assim mesmo */ }
+  stopRealtime(); clearTimeout(rtTimer); clearTimeout(syncTimer); syncTimer = null;
   setSession(null); localStorage.removeItem('syncCursor'); localStorage.setItem('syncDirty', '{}'); setSyncStatus();
 }
 
@@ -186,7 +187,7 @@ const syncStore = {
     if (mem) {
       const [arr, store] = mem, i = arr.findIndex(x => x.id === id);
       if (item === null) { if (i >= 0) arr.splice(i, 1); await tx(store, 'readwrite', o => o.delete(id)); if (kind === 'sermon') await tx('audio', 'readwrite', o => o.delete(id)); }
-      else { if (i >= 0) arr[i] = item; else arr.push(item); await tx(store, 'readwrite', o => o.put(item)); }
+      else { if (i >= 0) { const cur = arr[i]; for (const k of Object.keys(cur)) delete cur[k]; Object.assign(cur, item); item = cur; } else arr.push(item); await tx(store, 'readwrite', o => o.put(item)); }
     } else {
       const key = { plan: 'plans', cdate: 'customDates', assist: 'assistants', profile: 'profile' }[kind], list = JSON.parse(localStorage.getItem(key) || '[]'), i = list.findIndex(x => x.id === id);
       if (item === null) { if (i >= 0) list.splice(i, 1); } else if (i >= 0) list[i] = item; else list.push(item);
@@ -214,15 +215,18 @@ const syncSetTransport = t => { syncTransport = t; }; // para testes
 const syncCore = SyncCore.createSync({ store: syncStore, transport: { push: (...a) => syncTransport.push(...a), pull: (...a) => syncTransport.pull(...a) } });
 
 /* ---------- execução, agendamento e estado ---------- */
-let syncTimer = null, syncState = { kind: 'idle', at: null, error: '' };
-const syncSoon = () => { if (!getSession()) return; clearTimeout(syncTimer); syncTimer = setTimeout(syncNow, 2500); };
-function setSyncStatus(kind, error) {
-  syncState = { kind: kind || 'idle', at: kind === 'ok' ? Date.now() : syncState.at, error: error || '' };
-  const el = $('#syncst'); if (!el) return;
-  const t = { ok: '☁ sincronizado', busy: '⟳ sincronizando…', offline: '⚠ sem conexão', auth: '⚠ entre de novo', error: '⚠ erro de sincronização' }[syncState.kind];
-  el.textContent = getSession() && t ? t : ''; el.title = syncState.error || '';
+let syncTimer = null, syncState = { kind: 'idle', at: null, error: '' }, rtState = 'off';
+const syncSoon = (ms = 1500) => { if (!getSession() || syncTimer) return; syncTimer = setTimeout(() => { syncTimer = null; syncNow(); }, ms); }; // não reinicia a contagem: sobe no máximo ms depois da 1ª mudança, mesmo digitando sem parar
+function paintStatus() {
+  const el = $('#syncst');
+  if (el) {
+    const live = syncState.kind === 'ok' && rtState === 'SUBSCRIBED';
+    const t = live ? '☁ ao vivo' : { ok: '☁ sincronizado', busy: '⟳ sincronizando…', offline: '⚠ sem conexão', auth: '⚠ entre de novo', error: '⚠ erro de sincronização' }[syncState.kind];
+    el.textContent = getSession() && t ? t : ''; el.title = syncState.error || (live ? 'Atualização ao vivo ligada' : '');
+  }
   const box = $('#syncbox'); if (box && location.hash.startsWith('#/ajustes')) renderSyncBox(box);
 }
+function setSyncStatus(kind, error) { syncState = { kind: kind || 'idle', at: kind === 'ok' ? Date.now() : syncState.at, error: error || '' }; paintStatus(); }
 async function syncNow() {
   if (!syncConfigured() || !getSession()) return;
   if (!navigator.onLine) return setSyncStatus('offline');
@@ -230,6 +234,7 @@ async function syncNow() {
   try {
     await syncCore.run(); setSyncStatus('ok');
     if (remoteChanged) { toast(`${remoteChanged} item(ns) atualizado(s) de outro aparelho`); refreshAfterRemote(); }
+    if (Object.keys(dirtyGet()).length) syncSoon(); // algo mudou durante o envio
   } catch (e) {
     console.warn('sincronização', e);
     setSyncStatus(e instanceof SyncAuthError ? 'auth' : (e instanceof TypeError || !navigator.onLine) ? 'offline' : 'error', e.message);
@@ -237,14 +242,41 @@ async function syncNow() {
 }
 function refreshAfterRemote() { // não interrompe quem está pregando nem digitando
   const typing = document.activeElement && /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName);
-  if (!/^#\/pregar\//.test(location.hash) && !typing && !$('.modal')) route();
+  if (!/^#\/(pregar|teleprompter)\//.test(location.hash) && !typing && !$('.modal')) route();
 }
+
+/* ---------- atualização ao vivo (Supabase Realtime): avisa na hora que algo mudou; a busca periódica continua como reserva ---------- */
+let rt = null, rtTimer = null, rtTries = 0;
+const rtRetryMs = () => window.__rtRetryMs || Math.min(60000, 5000 * 2 ** Math.min(rtTries, 4));
+const loadSupabaseLib = () => window.supabase ? Promise.resolve() : new Promise((res, rej) => { const s = document.createElement('script'); s.src = 'vendor/supabase.js'; s.onload = res; s.onerror = () => rej(new Error('biblioteca do Supabase não carregou')); document.head.appendChild(s); });
+async function startRealtime() {
+  if (rt || !syncConfigured() || !getSession() || document.hidden || !navigator.onLine) return;
+  rt = { starting: true };
+  try {
+    await loadSupabaseLib(); const ses = await freshSession(); if (!ses) { rt = null; return; }
+    const client = supabase.createClient(sbCfg().supabaseUrl, sbCfg().supabaseKey, { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }, realtime: { params: { eventsPerSecond: 10 } } });
+    client.realtime.setAuth(ses.access_token);
+    const ch = client.channel('pregar-items').on('postgres_changes', { event: '*', schema: 'public', table: 'items' }, () => syncSoon(300))
+      .subscribe(status => {
+        if (!rt || rt.client !== client) return; // evento de uma conexão que já encerramos
+        rtState = status;
+        if (status === 'SUBSCRIBED') { rtTries = 0; syncSoon(200); } // garante que nada passou entre o último pull e a conexão
+        else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') { stopRealtime(); scheduleRealtimeRetry(); }
+        paintStatus();
+      });
+    rt = { client, ch };
+  } catch (e) { console.warn('atualização ao vivo indisponível (a busca periódica continua)', e); rt = null; rtState = 'off'; scheduleRealtimeRetry(); }
+}
+function stopRealtime() { const r = rt; rt = null; rtState = 'off'; if (r && r.client) { try { r.client.removeAllChannels(); r.client.realtime.disconnect(); } catch { /* ignorar */ } } paintStatus(); }
+function scheduleRealtimeRetry() { clearTimeout(rtTimer); if (!getSession()) return; rtTries++; rtTimer = setTimeout(startRealtime, rtRetryMs()); }
+function rtSetAuth(token) { try { if (rt && rt.client) rt.client.realtime.setAuth(token); } catch { /* ignorar */ } }
+
 function syncStart() {
   consumeAuthHash(); setSyncStatus(getSession() ? 'idle' : undefined);
-  if (getSession()) syncNow();
-  addEventListener('online', syncNow); addEventListener('offline', () => setSyncStatus('offline'));
-  document.addEventListener('visibilitychange', () => { if (!document.hidden) syncNow(); });
-  setInterval(syncNow, 3 * 60 * 1000);
+  if (getSession()) { syncNow(); startRealtime(); }
+  addEventListener('online', () => { syncNow(); startRealtime(); }); addEventListener('offline', () => { setSyncStatus('offline'); stopRealtime(); });
+  document.addEventListener('visibilitychange', () => { if (document.hidden) stopRealtime(); else { syncNow(); startRealtime(); } }); // com o app em segundo plano não gasta bateria nem dados
+  setInterval(() => { if (!document.hidden && getSession()) { syncNow(); startRealtime(); } }, window.__pollMs || 20000); // reserva: busca a cada 20 s com o app aberto
 }
 
 /* ---------- área "Conta e sincronização" (tela Ajustes) ---------- */
@@ -257,7 +289,7 @@ function renderSyncBox(box) {
   }
   const st = { ok: 'sincronizado', busy: 'sincronizando…', offline: 'sem conexão (as mudanças ficam guardadas e seguem quando voltar)', auth: 'precisa entrar de novo', error: 'erro: ' + syncState.error, idle: 'aguardando' }[syncState.kind];
   box.innerHTML = `<div class="row"><span>✅ Conectado como <b>${esc(s.user.email)}</b></span></div>
-   <p class="mute">Estado: ${esc(st)}${syncState.at ? ' · última sincronização ' + new Date(syncState.at).toLocaleTimeString('pt-BR') : ''} · ${pending} mudança(s) para enviar.<br>Sincroniza: pregações (com seus materiais), ilustrações, pedidos de oração, planos de leitura, datas próprias, seus assistentes e o perfil do pregador. Não sincroniza: gravações de áudio e as configurações do aparelho (teclas, tema).</p>
+   <p class="mute">Estado: ${esc(st)}${syncState.at ? ' · última sincronização ' + new Date(syncState.at).toLocaleTimeString('pt-BR') : ''} · ${pending} mudança(s) para enviar.<br>Atualização entre aparelhos: ${rtState === 'SUBSCRIBED' ? '<b>ao vivo</b> (as mudanças aparecem em segundos)' : 'busca a cada 20 segundos com o app aberto'}.<br>Sincroniza: pregações (com seus materiais), ilustrações, pedidos de oração, planos de leitura, datas próprias, seus assistentes e o perfil do pregador. Não sincroniza: gravações de áudio e as configurações do aparelho (teclas, tema).</p>
    <div class="row"><button id="sn2">Sincronizar agora</button><button class="sec" id="sa">Reenviar tudo</button><button class="sec" id="spw">Alterar senha</button><button class="sec" id="so">Sair</button></div>`;
   $('#spw', box).onclick = () => newPasswordModal('Alterar senha');
   $('#sn2', box).onclick = syncNow;
