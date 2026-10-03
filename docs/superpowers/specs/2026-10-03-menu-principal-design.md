@@ -1,6 +1,6 @@
 # Menu principal do Pregar: barra de ações + "Mais"
 
-Data: 2026-10-03 · Status: desenho aprovado pelo usuário, aguardando revisão do documento · Versão alvo: 0.15.0
+Data: 2026-10-03 · Status: **implementado** na v0.15.0 (2026-10-03) · Teste de toque real em tablet: pendente com o usuário
 
 ## 1. Objetivo
 Hoje o menu de cima tem 12 itens (Acervo, Agenda, Assistentes, Teleprompter, Ilustrações, Datas, Oração, Leitura, Bíblia, Estatísticas, Backup, Ajustes). No tablet ele quebra em 2 ou 3 linhas e rouba espaço da tela. O usuário pediu: deixar **na barra principal só os módulos que se executam** e mover o resto para **Configurações/Mais**.

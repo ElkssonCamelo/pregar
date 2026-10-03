@@ -81,20 +81,22 @@ function bindBackupBanners() {
 }
 if (!localStorage.getItem('firstUse')) localStorage.setItem('firstUse', new Date().toISOString());
 
-/* ========== tela Ajustes ========== */
+/* ========== tela Configurações (antes "Ajustes") ========== */
 async function ajustes() {
   const km = getKeys(), c = bkpCfg(), list = await snaps(), h = await folderHandle(), canPick = !!window.showDirectoryPicker;
   let perm = ''; if (h) { try { perm = await h.queryPermission({ mode: 'readwrite' }); } catch { perm = 'erro'; } }
   const last = localStorage.getItem('lastAuto');
-  app.innerHTML = `<h1>Ajustes</h1>
+  app.innerHTML = `<h1>Configurações</h1>
+  <h2>Perfil do pregador</h2><div class="card" id="profilebox"></div>
   <h2>Teclado e pedal</h2><div class="card">
    <p class="mute">Valem no modo pregação e na tela de slides. Pedais e controles Bluetooth costumam enviar setas ou PageUp/PageDown: pareie no sistema, clique em “+ tecla” e aperte o pedal. Funciona também com a janela do projetor em foco.</p>
    ${Object.entries(ACTIONS).map(([a, n]) => `<div class="row" style="padding:6px 0;border-bottom:1px solid var(--line)"><span style="flex:1;min-width:170px">${n}</span>
      ${km[a].map(k => `<span class="tag">${esc(keyLabel(k))} <a data-rk="${a}|${esc(k)}" style="cursor:pointer">✕</a></span>`).join('') || '<span class="mute">sem tecla</span>'}
      <button class="sec sm" data-ck="${a}">${capturing === a ? 'aperte uma tecla…' : '+ tecla'}</button></div>`).join('')}
    <div class="row" style="margin-top:10px"><span class="mute">Última tecla detectada: <b id="lk">${esc(lastKeyText)}</b></span><button class="sec sm" id="kr" style="margin-left:auto">Restaurar padrão</button></div></div>
-  <h2>Perfil do pregador</h2><div class="card" id="profilebox"></div>
   <h2>Conta e sincronização</h2><div class="card" id="syncbox"></div>
+  <h2 id="sec-backup">Backup e restauração</h2><div class="card"><p>Com a conta conectada, suas pregações ficam também na nuvem. Mesmo assim, exporte um arquivo de vez em quando e guarde-o <b>fora da pasta do app</b>: ele contém dados pessoais, como pedidos de oração.</p>
+   <div class="row"><button id="ex">⬇ Exportar tudo (JSON)</button><label class="btn sec" style="margin:0">⬆ Importar<input type="file" id="im" accept=".json" hidden></label></div></div>
   <h2>Backup automático</h2><div class="card">
    <label style="display:flex;gap:6px;align-items:center;margin:0"><input type="checkbox" id="ba" style="width:auto" ${c.auto ? 'checked' : ''}> Criar pontos de restauração automaticamente ao abrir o app</label>
    <div class="grid"><div><label>Frequência</label><select id="bf"><option value="daily" ${c.freq === 'daily' ? 'selected' : ''}>Diária</option><option value="weekly" ${c.freq === 'weekly' ? 'selected' : ''}>Semanal</option></select></div>
@@ -121,6 +123,9 @@ async function ajustes() {
   if ($('#br')) $('#br').onclick = async () => { await dbDel('backup', 'dir'); localStorage.removeItem('hasFolder'); localStorage.setItem('folderPending', ''); ajustes(); };
   $('#bn').onclick = async () => { const r = await autoBackup(true); toast(r ? `Ponto criado${r.folder === 'ok' ? ' e salvo na pasta' : r.folder === 'perm' ? ' (pasta precisa de autorização)' : ''}` : 'Nada para salvar ainda'); ajustes(); };
   $('#bd').onclick = downloadBackup;
+  $('#ex').onclick = downloadBackup;
+  $('#im').onchange = async e => { try { toast((await applyBackup(JSON.parse(await e.target.files[0].text()))) + ' pregações importadas'); } catch { toast('Arquivo inválido'); } };
+  const alvo = sessionStorage.getItem('scrollTo'); if (alvo) { sessionStorage.removeItem('scrollTo'); const el = document.getElementById(alvo); if (el) el.scrollIntoView(); }
   app.onclick = async e => {
     const rs = e.target.dataset.rs, dl = e.target.dataset.dl, rm = e.target.dataset.rm; if (!rs && !dl && !rm) return;
     const s = list.find(x => x.id === (rs || dl || rm));

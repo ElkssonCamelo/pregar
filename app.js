@@ -399,14 +399,40 @@ function oracao() {
   };
 }
 
+/* ========== navegação (barra principal + Mais) ========== */
+function navTab(r) { // qual item da barra fica aceso para cada rota
+  if (['', 's', 'slides', 'assist'].includes(r)) return 'acervo';
+  if (['teleprompter', 'oracao', 'plano', 'biblia'].includes(r)) return r;
+  if (['assistentes', 'ilus', 'datas', 'agenda', 'stats', 'ajustes', 'backup'].includes(r)) return 'mais';
+  return 'acervo'; // rota desconhecida cai no Acervo
+}
+function navActive(r) {
+  const t = navTab(r);
+  $$('#tabs [data-t]').forEach(el => { const on = el.dataset.t === t; el.classList.toggle('on', on); if (on) el.setAttribute('aria-current', 'page'); else el.removeAttribute('aria-current'); });
+  $$('#more a').forEach(el => el.classList.toggle('on', el.dataset.r === r));
+}
+const moreEl = $('#more'), moreBtn = $('#moreb');
+function closeMore() { if (!moreEl || moreEl.hidden) return; moreEl.hidden = true; moreBtn.setAttribute('aria-expanded', 'false'); }
+function toggleMore() {
+  const open = moreEl.hidden; moreEl.hidden = !open; moreBtn.setAttribute('aria-expanded', String(open));
+  if (open) { // no computador o menu abre logo abaixo do botão; no toque/estreito é a folha de baixo (CSS)
+    if (matchMedia('(pointer:coarse),(max-width:899px)').matches) { moreEl.style.left = moreEl.style.right = moreEl.style.top = ''; }
+    else { const b = moreBtn.getBoundingClientRect(); moreEl.style.top = Math.round(b.bottom + 6) + 'px'; moreEl.style.right = 'auto'; moreEl.style.left = Math.max(8, Math.min(Math.round(b.right - moreEl.offsetWidth), innerWidth - moreEl.offsetWidth - 8)) + 'px'; }
+  }
+}
+moreBtn.addEventListener('click', e => { e.stopPropagation(); toggleMore(); });
+moreEl.addEventListener('click', e => { if (e.target.closest('a')) closeMore(); });
+document.addEventListener('click', e => { if (!moreEl.hidden && !moreEl.contains(e.target) && !moreBtn.contains(e.target)) closeMore(); });
+addEventListener('keydown', e => { if (e.key === 'Escape' && !moreEl.hidden) { closeMore(); moreBtn.focus(); } });
+
 /* ========== roteador ========== */
 const app = $('#app');
 let cleanup = null;
 async function route() {
   if (cleanup) { cleanup(); cleanup = null; }
   const [, r = '', id, id2] = location.hash.replace('#', '').split('/');
-  $$('#nav a').forEach(a => a.classList.toggle('on', a.dataset.r === (r === 'assist' ? 'assistentes' : r || 'home')));
-  const views = { '': home, teleprompter, assist: assistWorkspace, assistentes: assistLibrary, ajustes, agenda, biblia, stats, backup, ilus: ilustracoes, plano, oracao, datas, s: editor, pregar: preach, slides: slidesView };
+  navActive(r); closeMore();
+  const views = { '': home, teleprompter, assist: assistWorkspace, assistentes: assistLibrary, ajustes, agenda, biblia, stats, backup: () => { sessionStorage.setItem('scrollTo', 'sec-backup'); history.replaceState(null, '', '#/ajustes'); return ajustes(); }, ilus: ilustracoes, plano, oracao, datas, s: editor, pregar: preach, slides: slidesView };
   if (typeof gateNeeded === 'function' && gateNeeded()) { showLoginGate(); return; }
   document.body.classList.remove('gated');
   scrollTo(0, 0); projSermon = null; app.onclick = null; kbActions = {};
@@ -929,14 +955,6 @@ function stats() {
    <div class="card"><div class="stat">${real.length ? Math.round(real.reduce((a, s) => a + s.real, 0) / real.length) : '–'} min</div>duração média real</div></div>
    <h2>Livros mais pregados (pelo texto-base)</h2><div class="card">${top.length ? top.map(([b, n]) => `<div class="row"><span style="width:140px">${esc(b)}</span><div class="bar" style="width:${n / mx * 60}%"></div><span>${n}</span></div>`).join('') : '<span class="mute">Sem dados ainda.</span>'}</div>
    <h2>Livros ainda não pregados</h2><div class="card mute">${missing.length === 66 ? 'Todos ainda.' : missing.join(' · ')}</div>`;
-}
-
-/* ========== Backup ========== */
-function backup() {
-  app.innerHTML = `<h1>Backup</h1><div class="card"><p>Seus dados ficam <b>somente neste aparelho/navegador</b>. Exporte com frequência.</p>
-   <div class="row"><button id="ex">⬇ Exportar tudo (JSON)</button><label class="btn sec" style="margin:0">⬆ Importar<input type="file" id="im" accept=".json" hidden></label><a class="btn sec" href="#/ajustes">Backup automático e pasta</a></div></div>`;
-  $('#ex').onclick = downloadBackup;
-  $('#im').onchange = async e => { try { toast((await applyBackup(JSON.parse(await e.target.files[0].text()))) + ' pregações importadas'); } catch { toast('Arquivo inválido'); } };
 }
 
 /* ========== tema ========== */

@@ -2,6 +2,17 @@
 
 Formato: [versão] - data. Versão 0.x = em construção (a sincronização na nuvem ainda não está ligada).
 
+## [0.15.0] - 2026-10-03
+### Alterado
+- **Novo menu principal** (desenho em `docs/superpowers/specs/2026-10-03-menu-principal-design.md`): barra com **Acervo, Teleprompter, Oração, Leitura e Bíblia** + **Mais**, em uma linha. **No topo** no computador; **embaixo** em telas de toque ou estreitas (< 900 px), com botões de 52 px, rótulo curto no celular e respeito à área segura do iPad.
+- **Mais** (menu suspenso no computador, folha embaixo no toque): Preparar (Assistentes, Ilustrações, Datas especiais), Acompanhar (Agenda, Estatísticas) e Sistema (Configurações). Fecha ao tocar fora, com Esc, ao escolher um item e ao trocar de tela.
+- **Ajustes virou Configurações** e ganhou a seção **Backup e restauração** (exportar/importar); a ordem agora é Perfil, Teclado e pedal, Conta, Backup e Backup automático. A rota `#/backup` continua valendo e abre Configurações na seção de backup. A tela "Backup" separada foi removida.
+- Cabeçalho fino de uma linha (nome, estado da sincronização, tema). Telas imersivas (pregar, teleprompter, entrada) continuam sem nenhuma barra.
+- Item da barra aceso conforme a tela (telas de uma pregação mantêm Acervo; o resto do Mais acende "Mais").
+
+### Testado
+- 5 larguras (360, 375, 768, 1024, 1366): uma linha, sem corte e sem rolagem lateral; 14 rotas com o item certo aceso; Mais (abrir, fechar fora/Esc/item, 6 destinos); telas imersivas; `#/backup`; exportar e importar; nada escondido atrás da barra; tela de entrada. NÃO testado: toque real em tablet.
+
 ## [0.14.2] - 2026-10-03
 ### Removido
 - **Gravação de áudio** (decisão do usuário: nenhum áudio no app): cartão "Gravação de áudio" do editor, código do microfone, a loja de áudio do banco do navegador (a versão do banco passou para 5 e **apaga gravações antigas, se existirem**; pregações e demais dados são preservados) e todas as menções (backup, sincronização, verificador de backup).
