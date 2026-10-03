@@ -38,4 +38,4 @@
 - [ ] **"Gerar aqui dentro"** pela API da Claude via função no servidor (Vercel): precisa de conta/chave da Anthropic (pago por uso, a chave fica só na Vercel), do login (Supabase) e de limite de uso.
 - [ ] Verificar o link `claude.ai/new?q=` (preenchimento automático do prompt) em uso real; a cópia para a área de transferência é o plano B.
 - [ ] Atenção: a coleção `pastor-ai` (REACHRIGHT) tem a regra "nunca gerar pregação pronta"; os modelos do Pregar não seguem essa regra, a decisão é do pregador.
-- [ ] Publicar a v0.11.0 na Vercel (o site publicado ainda é a v0.9.0). Antes: conferir que não há backups (`pregar-backup-*.json`) na pasta.
+- [x] Publicada a **v0.11.1** na Vercel (2026-10-03): https://pregar-eight.vercel.app. Antes de cada publicação: conferir backups na pasta (o `.vercelignore` os bloqueia) e testar com `node tests/slowserver.js` (internet lenta).
