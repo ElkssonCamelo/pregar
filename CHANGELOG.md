@@ -2,6 +2,11 @@
 
 Formato: [versão] - data. Versão 0.x = em construção (a sincronização na nuvem ainda não está ligada).
 
+## [0.16.2] - 2026-10-03
+### Corrigido
+- Texto da tela Oração dizia que os registros ficavam só no aparelho; agora explica que entram no backup e, com a sincronização ligada, vão para a conta privada na nuvem.
+- Importação: "Texto-base:" escrito com hífen não era reconhecido.
+
 ## [0.16.1] - 2026-10-03
 ### Alterado
 - Polimento (skill `impeccable-design-polish`): faixas do Acervo mais compactas e discretas (menos peso visual competindo com a lista), títulos de página que ocupam linha própria em telas estreitas, rótulos de filtro menores e animações desligadas para quem prefere menos movimento.

@@ -327,7 +327,7 @@ function cardModal(init, s) {
   };
 }
 
-/* ========== oração e visitas (dados pastorais: ficam só neste aparelho) ========== */
+/* ========== oração e visitas (dados pastorais: privados da sua conta) ========== */
 const PCAT = ['oração', 'visita', 'enfermo', 'aconselhamento', 'família', 'outro'];
 const savePr = async p => { if (!pray.find(x => x.id === p.id)) pray.push(p); await dbPut('pray', p); };
 const dueFollow = () => pray.filter(p => p.status === 'aberto' && p.followUp && p.followUp <= todayISO());
@@ -368,7 +368,7 @@ function prayMode() {
 function oracao() {
   const due = dueFollow();
   app.innerHTML = `<div class="row"><h1 style="flex:1">Oração e visitas</h1><button class="sec" id="om">🙏 Modo oração</button><button id="on">+ Novo pedido</button></div>
-   <p class="mute">🔒 Estes registros ficam somente neste aparelho (e no seu backup).</p>
+   <p class="mute">🔒 Estes registros são pastorais e sensíveis: ficam no seu aparelho, entram no seu backup e, com a sincronização ligada, vão para a sua conta privada na nuvem (só você acessa).</p>
    ${due.length ? `<div class="banner b-oracao"><span>${due.length} retorno(s) pendente(s): ${due.map(p => esc(p.person || p.category)).join(', ')}</span></div>` : ''}
    <div class="card"><div class="grid"><div><label>Buscar</label><input id="oq" placeholder="pessoa, pedido, anotação"></div>
    <div><label>Situação</label><select id="os"><option value="aberto">Abertos</option><option value="respondido">Respondidos</option><option value="arquivado">Arquivados</option><option value="">Todos</option></select></div>

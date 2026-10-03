@@ -102,7 +102,7 @@ function structure(paras, fname) {
   for (const p of list) {
     const t = p.text; let m;
     if (!s.baseText && !s.topics.length && !p.list) {
-      const lab = t.match(/^(texto(?: base| b[ií]blico)?|leitura|passagem|base b[ií]blica)\s*[:\-–]\s*(.+)$/i), r = refOnly(lab ? lab[2] : t);
+      const lab = t.match(/^(texto(?:[ -]base|[ -]b[ií]blico)?|leitura|passagem|base b[ií]blica)\s*[:\-–]\s*(.+)$/i), r = refOnly(lab ? lab[2] : t);
       if (r && (lab || t.length <= 60)) { s.baseText = (lab ? lab[2] : t).trim().replace(/[.;]+$/, ''); continue; }
       const seg = t.split(' · ')[0]; // linha de metadados do próprio app: "Salmos 23 · 02/10/2026 · local"
       if (t.includes(' · ') && refOnly(seg)) { s.baseText = seg.trim(); continue; }
