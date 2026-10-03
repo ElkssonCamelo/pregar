@@ -8,7 +8,7 @@ Formato: [versão] - data. Versão 0.x = em construção (a sincronização na n
 - Banco: tabela `items` com RLS por usuário aplicada e verificada (usuário A não vê/altera dados do B; anônimo bloqueado; "vale o mais novo" e lápides conferidos; verificador de segurança do Supabase sem alertas).
 
 ### Pendente para funcionar de ponta a ponta (painel do Supabase, feito pelo usuário)
-- Authentication > URL Configuration: Site URL `https://pregar-eight.vercel.app` e Redirect URLs `https://pregar-eight.vercel.app/**` e `http://localhost:8123/**`.
+- Authentication > URL Configuration: Site URL `https://meupregar.vercel.app` e Redirect URLs `https://meupregar.vercel.app/**` e `http://localhost:8123/**`.
 - (Recomendado) incluir `{{ .Token }}` no modelo de e-mail "Magic Link" para entrar com código de 6 dígitos.
 - Após o primeiro login: desligar "Allow new users to sign up" (impede que desconhecidos criem conta no seu projeto).
 

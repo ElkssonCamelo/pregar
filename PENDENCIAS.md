@@ -26,7 +26,7 @@
 - ~~Backup automático~~ (feito: pontos de restauração + pasta no Chrome/Edge)
 
 ## Uso no tablet (decisão pendente)
-- [x] **Publicado em HTTPS** (Vercel, 2026-10-02): https://pregar-eight.vercel.app — projeto `pregar` na equipe `juntos-sim`. Para atualizar: `npx vercel deploy --prod --yes` na pasta do app (subir a versão do cache em `sw.js` antes). Ao ligar o login, usar essa URL como Site URL / Redirect URL no Supabase.
+- [x] **Publicado em HTTPS** (Vercel, 2026-10-02): https://meupregar.vercel.app (endereço escolhido; `pregar.vercel.app` e `pregar-app` são de terceiros; o antigo pregar-eight.vercel.app continua respondendo, mas NÃO usar) — projeto `pregar` na equipe `juntos-sim`. Para atualizar: `npx vercel deploy --prod --yes` na pasta do app (subir a versão do cache em `sw.js` antes). Ao ligar o login, usar essa URL como Site URL / Redirect URL no Supabase.
 - [ ] **Levar as pregações para o tablet**: provisório = backup em pasta da nuvem no computador + Backup > Importar no tablet; definitivo = sincronização Supabase.
 - [ ] Botão "Levar para o tablet" (exportar só uma pregação, com slides e imagens, para importar no tablet) — opcional, enquanto não houver sincronização.
 - [ ] **Telão com o tablet**: espelhar a tela mostraria as anotações ao público; o correto é o tablet como controle remoto e outro aparelho no projetor (QR Code / Supabase Realtime).
@@ -39,4 +39,4 @@
 - [ ] **"Gerar aqui dentro"** pela API da Claude via função no servidor (Vercel): precisa de conta/chave da Anthropic (pago por uso, a chave fica só na Vercel), do login (Supabase) e de limite de uso.
 - [ ] Verificar o link `claude.ai/new?q=` (preenchimento automático do prompt) em uso real; a cópia para a área de transferência é o plano B.
 - [ ] Atenção: a coleção `pastor-ai` (REACHRIGHT) tem a regra "nunca gerar pregação pronta"; os modelos do Pregar não seguem essa regra, a decisão é do pregador.
-- [x] Publicada a **v0.11.1** na Vercel (2026-10-03): https://pregar-eight.vercel.app. Antes de cada publicação: conferir backups na pasta (o `.vercelignore` os bloqueia) e testar com `node tests/slowserver.js` (internet lenta).
+- [x] Publicada a **v0.11.1** na Vercel (2026-10-03): https://meupregar.vercel.app. Antes de cada publicação: conferir backups na pasta (o `.vercelignore` os bloqueia) e testar com `node tests/slowserver.js` (internet lenta).
