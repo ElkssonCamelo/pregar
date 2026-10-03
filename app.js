@@ -369,7 +369,7 @@ function oracao() {
   const due = dueFollow();
   app.innerHTML = `<div class="row"><h1 style="flex:1">Oração e visitas</h1><button class="sec" id="om">🙏 Modo oração</button><button id="on">+ Novo pedido</button></div>
    <p class="mute">🔒 Estes registros ficam somente neste aparelho (e no seu backup).</p>
-   ${due.length ? `<div class="banner" style="background:#7a4b9c"><span>${due.length} retorno(s) pendente(s): ${due.map(p => esc(p.person || p.category)).join(', ')}</span></div>` : ''}
+   ${due.length ? `<div class="banner b-oracao"><span>${due.length} retorno(s) pendente(s): ${due.map(p => esc(p.person || p.category)).join(', ')}</span></div>` : ''}
    <div class="card"><div class="grid"><div><label>Buscar</label><input id="oq" placeholder="pessoa, pedido, anotação"></div>
    <div><label>Situação</label><select id="os"><option value="aberto">Abertos</option><option value="respondido">Respondidos</option><option value="arquivado">Arquivados</option><option value="">Todos</option></select></div>
    <div><label>Tipo</label><select id="oc"><option value="">Todos</option>${PCAT.map(k => `<option>${k}</option>`).join('')}</select></div></div></div><div id="ol"></div>`;
@@ -425,6 +425,25 @@ moreEl.addEventListener('click', e => { if (e.target.closest('a')) closeMore(); 
 document.addEventListener('click', e => { if (!moreEl.hidden && !moreEl.contains(e.target) && !moreBtn.contains(e.target)) closeMore(); });
 addEventListener('keydown', e => { if (e.key === 'Escape' && !moreEl.hidden) { closeMore(); moreBtn.focus(); } });
 
+/* ========== acessibilidade: janelas e rótulos ========== */
+addEventListener('keydown', e => { // Esc fecha a janela aberta no topo (usa o botão Fechar/Cancelar dela, que já limpa o que for preciso)
+  if (e.key !== 'Escape') return; const ms = document.querySelectorAll('.modal'); if (!ms.length) return;
+  const b = [...ms[ms.length - 1].querySelectorAll('button')].find(x => /^(fechar|cancelar|sair)$/i.test(x.textContent.trim())); if (b) { e.preventDefault(); b.click(); }
+});
+let labelTimer = 0, labelSeq = 0;
+function associarRotulos() { // liga cada <label> ao campo logo depois dele (leitores de tela leem o rótulo ao focar o campo)
+  document.querySelectorAll('label:not([for])').forEach(l => {
+    if (l.querySelector('input,select,textarea')) return;
+    let n = l.nextElementSibling, f = null; if (n && n.matches('input,select,textarea')) f = n; else if (n) f = n.querySelector('input,select,textarea');
+    if (!f && l.parentElement && l.parentElement.matches('.row')) { const r = l.parentElement.nextElementSibling; if (r && r.matches('input,select,textarea')) f = r; } // rótulo numa linha com botão: o campo vem logo depois da linha
+    if (!f) { const p = l.parentElement; f = p && p.querySelector('input,select,textarea'); if (f && f.previousElementSibling !== l && !(l.compareDocumentPosition(f) & Node.DOCUMENT_POSITION_FOLLOWING)) f = null; }
+    if (!f || f.type === 'checkbox' || f.type === 'file' || f.type === 'range') return;
+    if (!f.id) f.id = 'campo' + (++labelSeq); l.setAttribute('for', f.id);
+  });
+}
+new MutationObserver(() => { clearTimeout(labelTimer); labelTimer = setTimeout(associarRotulos, 30); }).observe(document.body, { childList: true, subtree: true });
+$('#skip').addEventListener('click', e => { e.preventDefault(); app.focus(); app.scrollIntoView(); }); // pular a navegação: leva o foco ao conteúdo, sem trocar de tela
+
 /* ========== roteador ========== */
 const app = $('#app');
 let cleanup = null;
@@ -436,7 +455,8 @@ async function route() {
   if (typeof gateNeeded === 'function' && gateNeeded()) { showLoginGate(); return; }
   document.body.classList.remove('gated');
   scrollTo(0, 0); projSermon = null; app.onclick = null; kbActions = {};
-  try { await (views[r] || home)(id, id2); }
+  const quiet = window.__quietRoute; window.__quietRoute = false; clearTimeout(window.__animT); document.body.classList.toggle('anim', !quiet); window.__animT = setTimeout(() => document.body.classList.remove('anim'), 900);
+  try { await (views[r] || home)(id, id2); if (!quiet && !document.body.classList.contains('gated')) app.focus({ preventScroll: true }); }
   catch (e) { console.error('erro na tela', r, e); app.innerHTML = `<div class="card"><h2>Algo deu errado ao abrir esta tela</h2><p class="mute">${esc(e.message)}</p><p>Seus dados estão guardados. Tente recarregar a página.</p><button onclick="location.reload()">Recarregar</button> <a class="btn sec" href="#/">Ir para o Acervo</a></div>`; }
 }
 
@@ -446,7 +466,7 @@ function home() {
   const folders = [...new Set(sermons.map(s => s.folder).filter(Boolean))];
   const nx = sermons.filter(s => s.date >= todayISO() && s.status !== 'pregada').sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time))[0];
   const tr = todayReading(), pdue = dueFollow().length, sp = nextSpecial(30);
-  app.innerHTML = `${backupBanners()}${sp ? `<div class="banner" style="background:#2c7a7b"><span>🗓 <b>${esc(sp.name)}</b> — ${fmtDate(sp.date)}. Ainda sem pregação planejada.</span><a class="btn" href="#/datas">Planejar</a></div>` : ''}${pdue ? `<div class="banner" style="background:#7a4b9c"><span>🙏 ${pdue} retorno(s) de oração/visita pendente(s)</span><a class="btn" href="#/oracao">Ver</a></div>` : ''}${tr ? `<div class="banner" style="background:#4a6b3d"><span>📖 Leitura de hoje (${esc(tr.pl.name)}): <b>${esc(dayLabel(tr.pl.days[tr.i]))}</b></span><a class="btn" href="#/plano/${tr.pl.id}">Abrir</a></div>` : ''}${nx ? `<div class="banner"><span>Próxima mensagem: <b>${esc(nx.title) || '(sem título)'}</b> — ${fmtDate(nx.date)} ${esc(nx.time)}</span><a class="btn" href="#/pregar/${nx.id}">▶ Abrir e pregar</a></div>` : ''}<div class="row"><h1 style="flex:1">Acervo de pregações</h1><button class="sec" id="imp">⬆ Importar Word/PDF</button><a class="btn" href="#/s/novo">+ Nova pregação</a></div>
+  app.innerHTML = `${backupBanners()}${sp ? `<div class="banner b-info"><span>🗓 <b>${esc(sp.name)}</b> — ${fmtDate(sp.date)}. Ainda sem pregação planejada.</span><a class="btn" href="#/datas">Planejar</a></div>` : ''}${pdue ? `<div class="banner b-oracao"><span>🙏 ${pdue} retorno(s) de oração/visita pendente(s)</span><a class="btn" href="#/oracao">Ver</a></div>` : ''}${tr ? `<div class="banner b-ok"><span>📖 Leitura de hoje (${esc(tr.pl.name)}): <b>${esc(dayLabel(tr.pl.days[tr.i]))}</b></span><a class="btn" href="#/plano/${tr.pl.id}">Abrir</a></div>` : ''}${nx ? `<div class="banner"><span>Próxima mensagem: <b>${esc(nx.title) || '(sem título)'}</b> — ${fmtDate(nx.date)} ${esc(nx.time)}</span><a class="btn" href="#/pregar/${nx.id}">▶ Abrir e pregar</a></div>` : ''}<div class="row"><h1 style="flex:1">Acervo de pregações</h1><button class="sec" id="imp">⬆ Importar Word/PDF</button><a class="btn" href="#/s/novo">+ Nova pregação</a></div>
   <div class="card"><div class="grid">
     <div><label>Buscar (título, versículo, tema, ilustração…)</label><input id="q" placeholder="ex.: Romanos 8, graça, ovelha"></div>
     <div><label>Status</label><select id="fs"><option value="">Todos</option><option>rascunho</option><option>pronta</option><option>pregada</option></select></div>
@@ -496,7 +516,7 @@ async function editor(id) {
    <div><label>Duração real (min)</label><input type="number" data-m="real" value="${s.real ?? ''}"></div>
    <div><label>Status</label><select data-m="status">${['rascunho', 'pronta', 'pregada'].map(x => `<option ${s.status === x ? 'selected' : ''}>${x}</option>`).join('')}</select></div></div></div>
   <div class="card"><div class="row"><b>Preparação:</b>${CHECKS.map(k => `<label style="display:inline-flex;gap:4px;align-items:center;margin:0"><input type="checkbox" style="width:auto" data-ck="${k}" ${s.checks && s.checks[k] ? 'checked' : ''}>${k}</label>`).join('')}</div>
-   <div class="row" style="margin-top:8px"><select id="tpl" style="flex:1"><option value="">Aplicar modelo de esboço…</option>${Object.keys(TEMPLATES).map(k => `<option>${esc(k)}</option>`).join('')}</select><button class="sec" id="tplb">Adicionar tópicos do modelo</button></div></div>
+   <div class="row" style="margin-top:8px"><select id="tpl" style="flex:1" aria-label="Modelo de esboço"><option value="">Aplicar modelo de esboço…</option>${Object.keys(TEMPLATES).map(k => `<option>${esc(k)}</option>`).join('')}</select><button class="sec" id="tplb">Adicionar tópicos do modelo</button></div></div>
   <div class="card"><label>Introdução</label><textarea data-m="intro">${esc(s.intro)}</textarea></div>
   <h2>Tópicos</h2><div id="topics">${s.topics.map(topicHTML).join('')}</div>
   <button id="addT" class="sec">+ Adicionar tópico</button>
@@ -669,6 +689,7 @@ async function preach(id) {
     el.textContent = cur < 0 ? 'Ritmo: na introdução' : cur > exp ? `Ritmo: adiantado (agora seria o tópico ${exp + 1})` : cur < exp ? `Ritmo: atrasado (agora deveria estar no tópico ${exp + 1})` : 'Ritmo: no tempo ✔';
   };
   const tick = () => {
+    if (!$('#tm')) { clearInterval(iv); return; } // a tela já foi trocada: encerra este cronômetro
     if (!run && sec === 0 && ++opened >= 180) { run = true; $('#tg').textContent = '⏸'; toast('Cronômetro iniciado automaticamente'); }
     if (run) sec++;
     $('#ck').textContent = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
@@ -735,11 +756,11 @@ function bibleModal() {
 
 /* ========== Bíblia ========== */
 function biblia() {
-  app.innerHTML = `<h1>Bíblia</h1><div class="card"><div class="row"><select id="ver" style="width:auto"><option value="acf">Almeida Corrigida Fiel (offline)</option>${customVers().map(v => `<option value="${esc(v.id)}">${esc(v.name)} (importada)</option>`).join('')}<option value="almeida">Almeida (online)</option><option value="kjv">King James (EN)</option></select>
-   <input id="br" placeholder="ex.: João 3:16-18 ou Salmos 23" style="flex:1;min-width:200px"><button id="bg">Buscar</button></div><p class="mute">A Almeida Corrigida Fiel está embutida e funciona sem internet. As versões online precisam de internet na primeira consulta. Clique em um versículo para projetá-lo.</p></div>
+  app.innerHTML = `<h1>Bíblia</h1><div class="card"><div class="row"><select id="ver" style="width:auto" aria-label="Versão da Bíblia"><option value="acf">Almeida Corrigida Fiel (offline)</option>${customVers().map(v => `<option value="${esc(v.id)}">${esc(v.name)} (importada)</option>`).join('')}<option value="almeida">Almeida (online)</option><option value="kjv">King James (EN)</option></select>
+   <input id="br" placeholder="ex.: João 3:16-18 ou Salmos 23" style="flex:1;min-width:200px" aria-label="Passagem da Bíblia"><button id="bg">Buscar</button></div><p class="mute">A Almeida Corrigida Fiel está embutida e funciona sem internet. As versões online precisam de internet na primeira consulta. Clique em um versículo para projetá-lo.</p></div>
    <details class="card"><summary><b>Importar minha versão da Bíblia</b></summary>
     <p class="mute">Use somente texto que você tem direito de usar (ex.: NVT, NVI). O arquivo é lido no seu aparelho e <b>não é enviado a lugar nenhum</b>. Formato JSON com os 66 livros em ordem bíblica: <code>[{"chapters":[["v1","v2"],…]},…]</code>, <code>[[["v1"]]]</code> ou <code>{"Gênesis":{"1":{"1":"texto"}}}</code>.</p>
-    <div class="row"><input id="vn" placeholder="Nome (ex.: NVT)" style="flex:1"><label class="btn" style="margin:0">Escolher arquivo<input type="file" id="vf" accept=".json" hidden></label></div>
+    <div class="row"><input id="vn" placeholder="Nome (ex.: NVT)" style="flex:1" aria-label="Nome da versão importada"><label class="btn" style="margin:0">Escolher arquivo<input type="file" id="vf" accept=".json" hidden></label></div>
     <div id="vl">${customVers().map(v => `<div class="row" style="margin-top:6px"><span style="flex:1">${esc(v.name)}</span><button class="del sm" data-rm="${esc(v.id)}">Remover</button></div>`).join('')}</div></details>
    <div id="bo"></div>`;
   $('#vf').onchange = async e => {

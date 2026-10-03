@@ -32,7 +32,7 @@ const tpWords = t => (String(t).replace(/\[[^\]]{1,60}\]/g, ' ').replace(/[#*]/g
 function teleprompterLibrary() {
   const mats = sermons.flatMap(s => (s.materials || []).map(m => ({ s, m }))).sort((a, b) => b.m.updatedAt - a.m.updatedAt);
   app.innerHTML = `<h1>Teleprompter</h1><p class="mute">Leitura com rolagem automática no seu ritmo (palavras por minuto). Funciona offline, no computador e no tablet. Para Reels, deixe o aparelho em pé e use <b>espelho</b> se for gravar por vidro refletor.</p>
-   <div class="card"><b>Colar um texto</b><textarea id="tt" style="min-height:140px;margin-top:6px" placeholder="Cole aqui o roteiro ou a mensagem…">${esc(sessionStorage.getItem('tpText') || '')}</textarea><div class="row" style="margin-top:8px"><button id="tgo">▶ Abrir no teleprompter</button></div></div>
+   <div class="card"><b>Colar um texto</b><textarea id="tt" aria-label="Texto para o teleprompter" style="min-height:140px;margin-top:6px" placeholder="Cole aqui o roteiro ou a mensagem…">${esc(sessionStorage.getItem('tpText') || '')}</textarea><div class="row" style="margin-top:8px"><button id="tgo">▶ Abrir no teleprompter</button></div></div>
    <h2>Materiais salvos (${mats.length})</h2>${mats.length ? mats.slice(0, 30).map(({ s, m }) => `<div class="card row"><span style="flex:1"><b>${esc(m.title)}</b> <span class="st">${MAT_TYPES[m.type] || 'Outro'}</span><br><span class="mute">${esc(s.title) || '(sem título)'} · ${tpWords(m.text)} palavras</span></span><a class="btn sm" href="#/teleprompter/${s.id}/${m.id}">▶ Ler</a></div>`).join('') : '<p class="mute">Nenhum material ainda. Gere um em ✨ Assistentes (por exemplo, Roteiro de Reels ou Pregação completa).</p>'}
    <h2>Pregações (ler o esboço)</h2>${sermons.filter(s => s.topics.length).slice(0, 30).map(s => `<div class="card row"><span style="flex:1"><b>${esc(s.title) || '(sem título)'}</b> <span class="mute">${esc(s.baseText)}</span></span><a class="btn sm sec" href="#/teleprompter/${s.id}/esboco">▶ Esboço</a></div>`).join('') || '<p class="mute">Nenhuma pregação com tópicos.</p>'}`;
   $('#tgo').onclick = () => { const t = $('#tt').value.trim(); if (!t) return toast('Cole um texto primeiro'); sessionStorage.setItem('tpText', t); location.hash = '#/teleprompter/_/texto'; };
@@ -50,11 +50,11 @@ async function teleprompter(sid, what) {
   app.innerHTML = `<div class="tp" id="tp" data-th="${cfg.theme}">
    <div class="tpbar" id="tpbar"><a class="btn sec" href="${sid === '_' ? '#/teleprompter' : '#/assist/' + sid}" id="tpx">← Sair</a><b class="tptitle">${esc(title)}</b>
     <button id="tpp" aria-label="Iniciar ou pausar">▶</button><button class="sec" id="tpr" aria-label="Voltar ao início">↺</button>
-    <label class="tpl">Velocidade <input type="range" id="tpw" min="40" max="300" step="5"><b id="tpwl"></b></label>
-    <label class="tpl">Durar <input type="number" id="tpd" min="1" max="180" style="width:64px"> min</label>
-    <button class="sec" id="tpm1">A−</button><button class="sec" id="tpm2">A+</button>
-    <select id="tpt"><option value="dark">Preto/branco</option><option value="amber">Preto/amarelo</option><option value="green">Preto/verde</option><option value="paper">Branco/preto</option></select>
-    <button class="sec" id="tpmi" title="Espelho horizontal">⇋</button><button class="sec" id="tpg" title="Linha-guia">▬</button><button class="sec" id="tpo" title="Mais opções">⚙</button>${document.documentElement.requestFullscreen ? '<button class="sec" id="tpf" aria-label="Tela cheia">⛶</button>' : ''}</div>
+    <label class="tpl">Velocidade <input type="range" id="tpw" min="40" max="300" step="5" aria-label="Velocidade em palavras por minuto"><b id="tpwl"></b></label>
+    <label class="tpl">Durar <input type="number" id="tpd" min="1" max="180" style="width:64px" aria-label="Duração desejada em minutos"> min</label>
+    <button class="sec" id="tpm1" aria-label="Diminuir a letra">A−</button><button class="sec" id="tpm2" aria-label="Aumentar a letra">A+</button>
+    <select id="tpt" aria-label="Cores do texto"><option value="dark">Preto/branco</option><option value="amber">Preto/amarelo</option><option value="green">Preto/verde</option><option value="paper">Branco/preto</option></select>
+    <button class="sec" id="tpmi" title="Espelho horizontal" aria-label="Espelho horizontal">⇋</button><button class="sec" id="tpg" title="Linha-guia" aria-label="Linha-guia">▬</button><button class="sec" id="tpo" title="Mais opções" aria-label="Mais opções do teleprompter">⚙</button>${document.documentElement.requestFullscreen ? '<button class="sec" id="tpf" aria-label="Tela cheia">⛶</button>' : ''}</div>
    <div class="tpopt" id="tpopt" hidden><label class="tpl">Largura <input type="range" id="tpwd" min="40" max="100" step="2"></label><label class="tpl">Espaço entre linhas <input type="range" id="tplh" min="1.1" max="2.2" step="0.05"></label>
     <label class="tpl"><input type="checkbox" id="tpc" style="width:auto"> contagem 3-2-1</label><label class="tpl"><input type="checkbox" id="tpa" style="width:auto"> parar 2 s nas [pausa]</label>
     <span class="tpl">Atalhos: Espaço pausa · ↑/↓ velocidade · ←/→ ou PageUp/PageDown pulam · +/− letra · M espelho · G guia · R início · F tela cheia</span></div>
@@ -75,7 +75,7 @@ async function teleprompter(sid, what) {
   function upd() { const frac = maxPos() ? Math.min(1, pos / maxPos()) : 0; $('#tpbarp').style.width = (frac * 100) + '%'; $('#tpel').textContent = fmt(elapsed); $('#tprem').textContent = 'faltam ' + fmt((maxPos() - pos) / Math.max(1, pxs())); }
   const setPos = p => { pos = Math.max(0, Math.min(maxPos(), p)); lastSet = pos; view.scrollTop = pos; upd(); };
   function frame(t) {
-    if (!playing) return; const dt = Math.min(0.1, (t - last) / 1000); last = t; elapsed += dt; setPos(pos + pxs() * dt);
+    if (!playing) return; if (!document.getElementById('tpview')) { playing = false; return; } const dt = Math.min(0.1, (t - last) / 1000); last = t; elapsed += dt; setPos(pos + pxs() * dt);
     if (cfg.autoPause && !held) { const line = pos + view.clientHeight * 0.36; for (const m of col.querySelectorAll('[data-pause]')) { if (!done.has(m) && m.offsetTop <= line + 2) { done.add(m); held = true; clearTimeout(holdT); holdT = setTimeout(() => { held = false; last = performance.now(); }, 2000); } } }
     if (held) last = t; if (pos >= maxPos() - 1) { stop(true); return; } raf = requestAnimationFrame(frame);
   }

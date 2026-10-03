@@ -1,0 +1,3 @@
+Fraunces (c) 2020 The Fraunces Project Authors (github.com/undercasetype/Fraunces)
+Instrument Sans (c) 2022 The Instrument Sans Project Authors (github.com/Instrument/instrument-sans)
+Ambas licenciadas sob a SIL Open Font License 1.1 (https://openfontlicense.org). Arquivos obtidos de @fontsource-variable via jsDelivr (subconjunto latin).

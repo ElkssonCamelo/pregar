@@ -71,8 +71,8 @@ async function autoBackup(force) {
 }
 function backupBanners() { // avisos na tela inicial
   const out = [], days = Math.floor((Date.now() - new Date(localStorage.getItem('lastDownload') || localStorage.getItem('firstUse') || Date.now())) / 864e5);
-  if (localStorage.getItem('folderPending')) out.push(`<div class="banner" style="background:#a0522d"><span>💾 O backup em pasta precisa da sua autorização.</span><a class="btn" id="bkperm">Autorizar</a></div>`);
-  else if (!localStorage.getItem('hasFolder') && days >= 14 && (sermons.length || ilus.length)) out.push(`<div class="banner" style="background:#a0522d"><span>💾 Faz ${days} dias sem baixar um backup.</span><a class="btn" id="bknow">Baixar agora</a></div>`);
+  if (localStorage.getItem('folderPending')) out.push(`<div class="banner b-alerta"><span>💾 O backup em pasta precisa da sua autorização.</span><a class="btn" id="bkperm">Autorizar</a></div>`);
+  else if (!localStorage.getItem('hasFolder') && days >= 14 && (sermons.length || ilus.length)) out.push(`<div class="banner b-alerta"><span>💾 Faz ${days} dias sem baixar um backup.</span><a class="btn" id="bknow">Baixar agora</a></div>`);
   return out.join('');
 }
 function bindBackupBanners() {

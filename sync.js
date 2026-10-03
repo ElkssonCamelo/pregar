@@ -243,7 +243,7 @@ async function syncNow() {
 }
 function refreshAfterRemote() { // não interrompe quem está pregando nem digitando
   const typing = document.activeElement && /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName);
-  if (!/^#\/(pregar|teleprompter)\//.test(location.hash) && !typing && !$('.modal')) route();
+  if (!/^#\/(pregar|teleprompter)\//.test(location.hash) && !typing && !$('.modal')) { window.__quietRoute = true; route(); }
 }
 
 /* ---------- atualização ao vivo (Supabase Realtime): avisa na hora que algo mudou; a busca periódica continua como reserva ---------- */

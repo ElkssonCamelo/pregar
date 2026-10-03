@@ -2,6 +2,22 @@
 
 Formato: [versão] - data. Versão 0.x = em construção (a sincronização na nuvem ainda não está ligada).
 
+## [0.16.0] - 2026-10-03
+### Alterado
+- **Novo visual "manuscrito iluminado"** (skill `frontend-design`): pergaminho com textura leve e tinta, acento em ouro; no escuro, "vigília à luz de vela". Títulos e leitura em **Fraunces** (serifada), interface em **Instrument Sans**, ambas **dentro do app** (`vendor/fonts`, licença OFL; funcionam offline). Frase-chave em ouro e versículos em itálico com filete dourado no modo pregação; teleprompter na mesma serifada.
+- Ícones de **traço fino** na barra principal (no lugar dos emojis), item ativo com marca dourada; faixas informativas em tons de joia (verde-oliva, azul-petróleo, vinho, siena) via classes do tema.
+- Entrada suave das telas (somente ao navegar; desligada em atualização silenciosa vinda da nuvem e quando o aparelho pede menos movimento).
+
+### Acessibilidade e toque (revisão com o skill `ui-ux-pro-max`)
+- Link "Pular para o conteúdo"; foco vai para o conteúdo ao trocar de tela; anel de foco dourado visível em botões, links e abas; avisos (toast) lidos por leitor de tela (`aria-live`).
+- **56 de 56 campos com rótulo associado** (antes nenhum estava ligado ao seu campo) e nomes acessíveis nos botões só de ícone do teleprompter; Esc fecha as janelas.
+- Botões pequenos com 44 px em telas de toque, alvo maior nos "✕" das teclas, placeholders com contraste, medida de leitura limitada a 78 caracteres no modo pregação.
+- Proteção: o cronômetro do modo pregação e o do teleprompter se encerram sozinhos se a tela for trocada.
+
+### Observações
+- Desvio consciente do skill: a barra de baixo tem 6 itens (5 + Mais); a regra recomenda no máximo 5. Mantido por decisão do usuário (testado em 360 px).
+- Recusados por não servirem ao produto: paleta roxa, fonte Calistoga e padrão de página de captação sugeridos pelo gerador de sistema de design do skill.
+
 ## [0.15.0] - 2026-10-03
 ### Alterado
 - **Novo menu principal** (desenho em `docs/superpowers/specs/2026-10-03-menu-principal-design.md`): barra com **Acervo, Teleprompter, Oração, Leitura e Bíblia** + **Mais**, em uma linha. **No topo** no computador; **embaixo** em telas de toque ou estreitas (< 900 px), com botões de 52 px, rótulo curto no celular e respeito à área segura do iPad.
