@@ -88,7 +88,7 @@ async function consumeAuthHash() { // volta do link do e-mail: o Supabase devolv
   } catch (e) { toast('Login falhou: ' + e.message); }
 }
 async function wipeLocalData() { // apaga os dados DESTE aparelho (usa tx direto: não vira "exclusão" a enviar para a nuvem)
-  for (const st of ['sermons', 'ilus', 'pray', 'audio']) for (const k of await tx(st, 'readonly', o => o.getAllKeys())) await tx(st, 'readwrite', o => o.delete(k));
+  for (const st of ['sermons', 'ilus', 'pray']) for (const k of await tx(st, 'readonly', o => o.getAllKeys())) await tx(st, 'readwrite', o => o.delete(k));
   if (typeof snaps === 'function') for (const sn of await snaps()) await tx('backup', 'readwrite', o => o.delete(sn.id));
   ['plans', 'customDates', 'assistants', 'profile', 'syncDirty', 'syncCursor', 'syncSeq', 'syncUser', 'notified', 'lastAuto', 'lastDownload', 'folderPending'].forEach(k => localStorage.removeItem(k));
   sermons.length = 0; ilus.length = 0; pray.length = 0;
@@ -187,7 +187,7 @@ const syncStore = {
     const mem = { sermon: [sermons, 'sermons'], ilus: [ilus, 'ilus'], pray: [pray, 'pray'] }[kind];
     if (mem) {
       const [arr, store] = mem, i = arr.findIndex(x => x.id === id);
-      if (item === null) { if (i >= 0) arr.splice(i, 1); await tx(store, 'readwrite', o => o.delete(id)); if (kind === 'sermon') await tx('audio', 'readwrite', o => o.delete(id)); }
+      if (item === null) { if (i >= 0) arr.splice(i, 1); await tx(store, 'readwrite', o => o.delete(id)); }
       else { if (i >= 0) { const cur = arr[i]; for (const k of Object.keys(cur)) delete cur[k]; Object.assign(cur, item); item = cur; } else arr.push(item); await tx(store, 'readwrite', o => o.put(item)); }
     } else {
       const key = { plan: 'plans', cdate: 'customDates', assist: 'assistants', profile: 'profile' }[kind], list = JSON.parse(localStorage.getItem(key) || '[]'), i = list.findIndex(x => x.id === id);
@@ -290,7 +290,7 @@ function renderSyncBox(box) {
   }
   const st = { ok: 'sincronizado', busy: 'sincronizando…', offline: 'sem conexão (as mudanças ficam guardadas e seguem quando voltar)', auth: 'precisa entrar de novo', error: 'erro: ' + syncState.error, idle: 'aguardando' }[syncState.kind];
   box.innerHTML = `<div class="row"><span>✅ Conectado como <b>${esc(s.user.email)}</b></span></div>
-   <p class="mute">Estado: ${esc(st)}${syncState.at ? ' · última sincronização ' + new Date(syncState.at).toLocaleTimeString('pt-BR') : ''} · ${pending} mudança(s) para enviar.<br>Atualização entre aparelhos: ${rtState === 'SUBSCRIBED' ? '<b>ao vivo</b> (as mudanças aparecem em segundos)' : 'busca a cada 20 segundos com o app aberto'}.<br>Sincroniza: pregações (com seus materiais), ilustrações, pedidos de oração, planos de leitura, datas próprias, seus assistentes e o perfil do pregador. Não sincroniza: gravações de áudio e as configurações do aparelho (teclas, tema).</p>
+   <p class="mute">Estado: ${esc(st)}${syncState.at ? ' · última sincronização ' + new Date(syncState.at).toLocaleTimeString('pt-BR') : ''} · ${pending} mudança(s) para enviar.<br>Atualização entre aparelhos: ${rtState === 'SUBSCRIBED' ? '<b>ao vivo</b> (as mudanças aparecem em segundos)' : 'busca a cada 20 segundos com o app aberto'}.<br>Sincroniza: pregações (com seus materiais), ilustrações, pedidos de oração, planos de leitura, datas próprias, seus assistentes e o perfil do pregador. Não sincroniza: as configurações do aparelho (teclas, tema).</p>
    <div class="row"><button id="sn2">Sincronizar agora</button><button class="sec" id="sa">Reenviar tudo</button><button class="sec" id="spw">Alterar senha</button><button class="sec" id="so">Sair</button></div>`;
   $('#spw', box).onclick = () => newPasswordModal('Alterar senha');
   $('#sn2', box).onclick = syncNow;

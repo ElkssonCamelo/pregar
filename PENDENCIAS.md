@@ -51,4 +51,4 @@
 - [x] Envio em ~1,5 s, atualização ao vivo (Realtime), busca de reserva a cada 20 s, reconexão automática.
 - [x] Testado pelo usuário com dois aparelhos logados em 2026-10-03: pregação criada no computador apareceu no tablet (sucesso).
 - [ ] Aviso do Supabase: "Leaked password protection disabled" (proteção contra senhas vazadas): ligar em Authentication > Sign In / Providers > Password security, se estiver disponível no plano; senão usar senha longa e única.
-- Limites conhecidos: edição da MESMA pregação nos dois aparelhos ao mesmo tempo = vale a mais recente (por documento); áudios não sincronizam; iPad pode suspender o app em segundo plano (ao voltar ele sincroniza na hora).
+- Limites conhecidos: edição da MESMA pregação nos dois aparelhos ao mesmo tempo = vale a mais recente (por documento); (áudio foi removido do app por decisão do usuário); iPad pode suspender o app em segundo plano (ao voltar ele sincroniza na hora).

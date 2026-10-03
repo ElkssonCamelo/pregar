@@ -13,11 +13,11 @@ const debounce = (f, ms = 400) => { let t; return (...a) => { clearTimeout(t); t
 
 /* ========== armazenamento (IndexedDB) ========== */
 const DB = new Promise((res, rej) => {
-  const r = indexedDB.open('pregar', 4);
+  const r = indexedDB.open('pregar', 5);
   r.onupgradeneeded = () => {
     const d = r.result, has = n => d.objectStoreNames.contains(n);
     if (!has('sermons')) d.createObjectStore('sermons', { keyPath: 'id' });
-    if (!has('audio')) d.createObjectStore('audio');
+    if (has('audio')) d.deleteObjectStore('audio'); // gravações de áudio foram removidas do app (v0.15.0)
     if (!has('bible')) d.createObjectStore('bible');
     if (!has('ilus')) d.createObjectStore('ilus', { keyPath: 'id' });
     if (!has('pray')) d.createObjectStore('pray', { keyPath: 'id' });
@@ -476,8 +476,7 @@ async function editor(id) {
   <button id="addT" class="sec">+ Adicionar tópico</button>
   <div class="card" style="margin-top:12px"><label>Conclusão / apelo</label><textarea data-m="conclusion">${esc(s.conclusion)}</textarea></div>
   <div class="card"><label>Notas pós-pregação (o que funcionou, o que ajustar)</label><textarea data-m="postNotes">${esc(s.postNotes)}</textarea></div>
-  ${s.importedText ? `<details class="card"><summary><b>Texto original importado</b> (somente leitura)</summary><textarea readonly style="min-height:260px;margin-top:8px">${esc(s.importedText)}</textarea></details>` : ''}
-  <div class="card"><b>Gravação de áudio</b><div class="row" style="margin-top:8px"><button id="rec">● Gravar</button><span id="recst" class="mute"></span></div><div id="aud"></div></div>`;
+  ${s.importedText ? `<details class="card"><summary><b>Texto original importado</b> (somente leitura)</summary><textarea readonly style="min-height:260px;margin-top:8px">${esc(s.importedText)}</textarea></details>` : ''}`;
   const save = debounce(() => saveS(s).then(() => toast('Salvo')));
   app.oninput = e => {
     const el = e.target;
@@ -506,23 +505,10 @@ async function editor(id) {
   };
   $('#tplb').onclick = () => { const k = $('#tpl').value; if (!k) return; TEMPLATES[k].forEach(n => { const t = blankTopic(); t.title = n; s.topics.push(t); }); redrawTopics(); };
   $('#dup').onclick = async () => { const n = JSON.parse(JSON.stringify(s)); Object.assign(n, { id: uid(), title: (s.title || '') + ' (cópia)', status: 'rascunho', real: null, date: todayISO(), postNotes: '', checks: {}, createdAt: Date.now() }); n.slides.forEach(x => x.id = uid()); await saveS(n); location.hash = '#/s/' + n.id; toast('Duplicada como rascunho'); };
-  $('#del').onclick = async () => { if (confirm('Excluir esta pregação definitivamente?')) { sermons = sermons.filter(x => x.id !== s.id); await dbDel('sermons', s.id); await dbDel('audio', s.id); location.hash = '#/'; } };
+  $('#del').onclick = async () => { if (confirm('Excluir esta pregação definitivamente?')) { sermons = sermons.filter(x => x.id !== s.id); await dbDel('sermons', s.id); location.hash = '#/'; } };
   $('#pdf').onclick = () => printSermon(s);
   $('#exp').onclick = () => exportModal(s);
-  // áudio
-  const showAudio = async () => { const b = await dbGet('audio', s.id); $('#aud').innerHTML = b ? `<audio controls src="${URL.createObjectURL(b)}" style="width:100%;margin-top:8px"></audio><button class="sec sm" id="rma">Apagar áudio</button>` : ''; if (b) $('#rma').onclick = async () => { await dbDel('audio', s.id); showAudio(); }; };
-  showAudio();
-  let mr = null, chunks = [];
-  $('#rec').onclick = async () => {
-    if (mr && mr.state === 'recording') { mr.stop(); return; }
-    try {
-      const st = await navigator.mediaDevices.getUserMedia({ audio: true }); mr = new MediaRecorder(st); chunks = [];
-      mr.ondataavailable = e => chunks.push(e.data);
-      mr.onstop = async () => { st.getTracks().forEach(t => t.stop()); await dbPut('audio', new Blob(chunks, { type: mr.mimeType }), s.id); $('#rec').textContent = '● Gravar'; $('#recst').textContent = ''; showAudio(); toast('Áudio salvo'); };
-      mr.start(); $('#rec').textContent = '■ Parar'; $('#recst').textContent = 'Gravando…';
-    } catch (e) { toast('Microfone indisponível'); }
-  };
-  cleanup = () => { app.oninput = null; if (mr && mr.state === 'recording') mr.stop(); };
+  cleanup = () => { app.oninput = null; };
 }
 /* ========== exportar (Word .docx e Markdown) ========== */
 async function sermonBlocks(s, o) {
@@ -948,8 +934,7 @@ function stats() {
 /* ========== Backup ========== */
 function backup() {
   app.innerHTML = `<h1>Backup</h1><div class="card"><p>Seus dados ficam <b>somente neste aparelho/navegador</b>. Exporte com frequência.</p>
-   <div class="row"><button id="ex">⬇ Exportar tudo (JSON)</button><label class="btn sec" style="margin:0">⬆ Importar<input type="file" id="im" accept=".json" hidden></label><a class="btn sec" href="#/ajustes">Backup automático e pasta</a></div>
-   <p class="mute">Nota: gravações de áudio não entram no JSON (ficam apenas no aparelho).</p></div>`;
+   <div class="row"><button id="ex">⬇ Exportar tudo (JSON)</button><label class="btn sec" style="margin:0">⬆ Importar<input type="file" id="im" accept=".json" hidden></label><a class="btn sec" href="#/ajustes">Backup automático e pasta</a></div></div>`;
   $('#ex').onclick = downloadBackup;
   $('#im').onchange = async e => { try { toast((await applyBackup(JSON.parse(await e.target.files[0].text()))) + ' pregações importadas'); } catch { toast('Arquivo inválido'); } };
 }

@@ -31,7 +31,6 @@ console.log(`\nCom tópicos: ${comTopicos}/${S.length} | com slides: ${comSlides
 if (vazias) notes.push(`${vazias} pregação(ões) completamente vazia(s) (provavelmente "Nova pregação" aberta e abandonada; dá para apagar)`);
 if (!S.length && !I.length && !P.length) problems.push('o backup está VAZIO: foi exportado de um lugar sem dados (ex.: o endereço novo da Vercel, que começa vazio)');
 if (comTopicos === 0 && S.length) notes.push('nenhuma pregação tem tópicos ainda');
-notes.push('lembrete: gravações de áudio NÃO entram neste arquivo (ficam só no aparelho)');
 
 console.log('');
 notes.forEach(n => console.log('ℹ', n));

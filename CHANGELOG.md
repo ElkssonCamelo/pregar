@@ -2,6 +2,10 @@
 
 Formato: [versão] - data. Versão 0.x = em construção (a sincronização na nuvem ainda não está ligada).
 
+## [0.14.2] - 2026-10-03
+### Removido
+- **Gravação de áudio** (decisão do usuário: nenhum áudio no app): cartão "Gravação de áudio" do editor, código do microfone, a loja de áudio do banco do navegador (a versão do banco passou para 5 e **apaga gravações antigas, se existirem**; pregações e demais dados são preservados) e todas as menções (backup, sincronização, verificador de backup).
+
 ## [0.14.1] - 2026-10-03
 ### Alterado
 - Tamanho mínimo da senha passou a **10 caracteres** (igual ao "Minimum password length" do Supabase): tela de criar conta, janela de nova senha e mensagens. Valor em `config.js` (`minPassword`). Mensagem de erro do servidor (senha fraca) agora explica a regra.
