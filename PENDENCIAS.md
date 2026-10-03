@@ -7,6 +7,8 @@
 - [ ] IA para esboço, slides e leitura de foto de caderno (API da Claude via função no servidor; a chave não pode ficar no navegador)
 - [ ] Controle do telão pelo celular por QR Code / código (tempo real via Supabase Realtime)
 
+- [ ] **Criar repositório PRIVADO no GitHub** para guardar uma cópia do código e do histórico (hoje o projeto não tem remoto: `git remote -v` vazio; o histórico existe só no computador). Passos: criar o repositório vazio e privado em github.com, passar o endereço, e então `git remote add origin <url>` + `git push -u origin main`. Não incluir backups/dados (já estão no `.gitignore`).
+
 ## Bíblia: checar depois
 - [ ] **API.Bible (scripture.api.bible)**: verificar se tem NVT / NVI / ARA / NAA em português, qual o plano gratuito, limites de uso e se os termos permitem uso em app pessoal. Se sim, chamar via função no servidor (a chave não vai no navegador) e guardar cache local.
 - [ ] Alternativa: licença direta com a Editora Mundo Cristão (NVT) ou outra editora.
