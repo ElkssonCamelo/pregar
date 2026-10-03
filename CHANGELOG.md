@@ -2,6 +2,18 @@
 
 Formato: [versão] - data. Versão 0.x = em construção (a sincronização na nuvem ainda não está ligada).
 
+## [0.13.0] - 2026-10-03
+### Adicionado
+- **Tela de entrada obrigatória (e-mail e senha)**: ao abrir o app sem login neste aparelho. Criar conta, "esqueci a senha" (link por e-mail e tela de nova senha), entrar por link (alternativa), mostrar/esconder senha, mensagens de erro em português. `requireLogin` em `config.js` liga/desliga.
+- **Depois de entrar uma vez, o app abre também sem internet** (a sessão fica guardada; a senha só é pedida de novo se a sessão for revogada).
+- Ajustes > Conta: alterar senha e **sair com segurança**: opção de apagar os dados do aparelho (recomendado em aparelho compartilhado), **recusada se houver mudanças ainda não enviadas à nuvem**.
+- Entrar com outra conta num aparelho que tem dados de uma conta anterior: o app pergunta se apaga os dados locais antes.
+
+### Observações
+- A tela de entrada protege o uso normal do app; os dados locais do navegador não são criptografados (a proteção real dos dados na nuvem é o login + RLS do banco).
+- Supabase (painel, a cargo do usuário): para entrar logo após criar a conta, desligar "Confirm email" (Authentication > Sign In / Providers > Email). Depois de criar a própria conta, desligar "Allow new users to sign up".
+- Testado com um servidor de mentira (nenhuma chamada real, nenhuma conta criada): entrada, senha errada, criar conta (erros), confirmar e-mail, senha esquecida, nova senha, link expirado, sair mantendo/apagando, proteção contra apagar sem enviar, troca de conta, abrir sem internet.
+
 ## [0.12.0] - 2026-10-03
 ### Adicionado
 - **Sincronização ligada** ao Supabase (projeto `pregar`, região São Paulo, conta nova): login por e-mail em Ajustes > Conta e sincronização; pregações (com materiais), ilustrações, pedidos de oração, planos, datas, assistentes e perfil sincronizam entre aparelhos.

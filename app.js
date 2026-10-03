@@ -407,6 +407,8 @@ async function route() {
   const [, r = '', id, id2] = location.hash.replace('#', '').split('/');
   $$('#nav a').forEach(a => a.classList.toggle('on', a.dataset.r === (r === 'assist' ? 'assistentes' : r || 'home')));
   const views = { '': home, teleprompter, assist: assistWorkspace, assistentes: assistLibrary, ajustes, agenda, biblia, stats, backup, ilus: ilustracoes, plano, oracao, datas, s: editor, pregar: preach, slides: slidesView };
+  if (typeof gateNeeded === 'function' && gateNeeded()) { showLoginGate(); return; }
+  document.body.classList.remove('gated');
   scrollTo(0, 0); projSermon = null; app.onclick = null; kbActions = {};
   try { await (views[r] || home)(id, id2); }
   catch (e) { console.error('erro na tela', r, e); app.innerHTML = `<div class="card"><h2>Algo deu errado ao abrir esta tela</h2><p class="mute">${esc(e.message)}</p><p>Seus dados estão guardados. Tente recarregar a página.</p><button onclick="location.reload()">Recarregar</button> <a class="btn sec" href="#/">Ir para o Acervo</a></div>`; }

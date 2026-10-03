@@ -117,3 +117,8 @@ body.prompting #top{display:none}
 .tpbar select{width:auto}.tpbar input[type=number]{min-height:40px}
 .tpopt[hidden]{display:none}
 #tptext>:first-child{margin-top:0}
+
+/* tela de entrada */
+body.gated #nav,body.gated #th,body.gated #syncst{display:none}
+.gate{max-width:420px;margin:7vh auto}
+.gate input{font-size:17px}

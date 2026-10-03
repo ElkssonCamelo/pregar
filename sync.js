@@ -35,6 +35,46 @@ async function verifyLoginCode(email, token) {
   const j = await r.json().catch(() => ({})); if (!r.ok || !j.access_token) throw new Error(j.msg || j.error_description || 'código inválido ou expirado');
   await finishLogin({ access_token: j.access_token, refresh_token: j.refresh_token, expires_at: Math.floor(Date.now() / 1000) + (j.expires_in || 3600), user: { id: j.user.id, email: j.user.email } });
 }
+const sessionFrom = j => ({ access_token: j.access_token, refresh_token: j.refresh_token, expires_at: Math.floor(Date.now() / 1000) + (j.expires_in || 3600), user: { id: j.user.id, email: j.user.email } });
+async function authError(r, fallback) { // mensagens do Supabase em português
+  const j = await r.json().catch(() => ({})), raw = String(j.msg || j.error_description || j.message || '').toLowerCase(), code = String(j.error_code || '');
+  if (/invalid login|invalid credentials/.test(raw) || code === 'invalid_credentials') return 'E-mail ou senha incorretos.';
+  if (/not confirmed/.test(raw) || code === 'email_not_confirmed') return 'Este e-mail ainda não foi confirmado: abra o e-mail de confirmação e clique no link.';
+  if (/signups? (not allowed|disabled)|signup is disabled/.test(raw) || code === 'signup_disabled') return 'Novos cadastros estão desativados neste app. Use uma conta que já existe.';
+  if (/already registered|already been registered/.test(raw) || code === 'user_already_exists') return 'Este e-mail já tem conta: use "Já tenho conta".';
+  if (/password/.test(raw) && /(least|short|weak|characters)/.test(raw)) return 'A senha é curta ou fraca demais. Use pelo menos 8 caracteres.';
+  if (/rate limit|too many|over_.*rate/.test(raw) || r.status === 429) return 'Muitas tentativas. Espere alguns minutos e tente de novo.';
+  return fallback + (j.msg ? ' (' + j.msg + ')' : '');
+}
+async function passwordSignIn(email, password) {
+  const r = await sbFetch('/auth/v1/token?grant_type=password', { method: 'POST', body: JSON.stringify({ email, password }) }, false);
+  if (!r.ok) throw new Error(await authError(r, 'Não foi possível entrar.'));
+  await finishLogin(sessionFrom(await r.json()));
+}
+async function passwordSignUp(email, password) { // 'ok' = já entrou; 'confirm' = precisa clicar no e-mail de confirmação
+  const r = await sbFetch('/auth/v1/signup?redirect_to=' + encodeURIComponent(location.origin + location.pathname), { method: 'POST', body: JSON.stringify({ email, password }) }, false);
+  if (!r.ok) throw new Error(await authError(r, 'Não foi possível criar a conta.'));
+  const j = await r.json(); if (j.access_token) { await finishLogin(sessionFrom(j)); return 'ok'; } return 'confirm';
+}
+async function sendPasswordReset(email) {
+  const r = await sbFetch('/auth/v1/recover?redirect_to=' + encodeURIComponent(location.origin + location.pathname), { method: 'POST', body: JSON.stringify({ email }) }, false);
+  if (!r.ok) throw new Error(await authError(r, 'Não foi possível enviar o e-mail.'));
+}
+async function setNewPassword(password) {
+  const r = await sbFetch('/auth/v1/user', { method: 'PUT', body: JSON.stringify({ password }) });
+  if (!r.ok) throw new Error(await authError(r, 'Não foi possível trocar a senha.'));
+}
+function newPasswordModal(title) {
+  const m = document.createElement('div'); m.className = 'modal';
+  m.innerHTML = `<div style="max-width:420px"><h2>${esc(title || 'Nova senha')}</h2><form id="npf"><label>Nova senha (mínimo 8 caracteres)</label><input id="np1" type="password" autocomplete="new-password"><label>Repita a nova senha</label><input id="np2" type="password" autocomplete="new-password">
+   <div id="npe" role="alert" style="color:var(--bad);min-height:1.3em;margin:6px 0"></div><div class="row"><button id="nps">Salvar senha</button><button type="button" class="sec" id="npx">Cancelar</button></div></form></div>`;
+  document.body.appendChild(m); $('#npx', m).onclick = () => m.remove(); $('#np1', m).focus();
+  $('#npf', m).onsubmit = async e => {
+    e.preventDefault(); const a = $('#np1', m).value, b = $('#np2', m).value, err = t => $('#npe', m).textContent = t;
+    if (a.length < 8) return err('Use pelo menos 8 caracteres.'); if (a !== b) return err('As duas senhas não são iguais.');
+    try { await setNewPassword(a); m.remove(); toast('Senha alterada'); } catch (x) { err(x.message); }
+  };
+}
 async function consumeAuthHash() { // volta do link do e-mail: o Supabase devolve #access_token=...
   if (!/^#(access_token|error)=/.test(location.hash) || !syncConfigured()) return;
   const p = new URLSearchParams(location.hash.slice(1)); history.replaceState(null, '', location.pathname + '#/ajustes');
@@ -43,16 +83,62 @@ async function consumeAuthHash() { // volta do link do e-mail: o Supabase devolv
     const at = p.get('access_token'), r = await fetch(sbUrl('/auth/v1/user'), { headers: { apikey: sbCfg().supabaseKey, Authorization: 'Bearer ' + at } }), u = await r.json();
     if (!r.ok) throw new Error('usuário não confirmado');
     await finishLogin({ access_token: at, refresh_token: p.get('refresh_token'), expires_at: Math.floor(Date.now() / 1000) + (+p.get('expires_in') || 3600), user: { id: u.id, email: u.email } });
+    if (p.get('type') === 'recovery') setTimeout(() => newPasswordModal('Defina a sua nova senha'), 400);
   } catch (e) { toast('Login falhou: ' + e.message); }
 }
+async function wipeLocalData() { // apaga os dados DESTE aparelho (usa tx direto: não vira "exclusão" a enviar para a nuvem)
+  for (const st of ['sermons', 'ilus', 'pray', 'audio']) for (const k of await tx(st, 'readonly', o => o.getAllKeys())) await tx(st, 'readwrite', o => o.delete(k));
+  if (typeof snaps === 'function') for (const sn of await snaps()) await tx('backup', 'readwrite', o => o.delete(sn.id));
+  ['plans', 'customDates', 'assistants', 'profile', 'syncDirty', 'syncCursor', 'syncSeq', 'syncUser', 'notified', 'lastAuto', 'lastDownload', 'folderPending'].forEach(k => localStorage.removeItem(k));
+  sermons.length = 0; ilus.length = 0; pray.length = 0;
+}
+const hasLocalData = () => !!(sermons.length || ilus.length || pray.length || getPlans().length || getAssists().length || getCustomDates().length);
 async function finishLogin(s) {
+  const prev = localStorage.getItem('syncUser');
+  if (prev && prev !== s.user.id && hasLocalData() && confirm('Este aparelho tem dados de OUTRA conta.\n\nOK = apagar os dados deste aparelho e entrar limpo (recomendado).\nCancelar = manter e juntar tudo à conta que está entrando.')) await wipeLocalData();
   if (localStorage.getItem('syncUser') !== s.user.id) { localStorage.removeItem('syncCursor'); localStorage.setItem('syncDirty', '{}'); } // outra conta: começa do zero
-  localStorage.setItem('syncUser', s.user.id); setSession(s); markAllDirty(); toast('Conectado como ' + s.user.email);
-  if (location.hash.startsWith('#/ajustes')) ajustes(); syncNow();
+  localStorage.setItem('syncUser', s.user.id); setSession(s); await markAllDirty(); toast('Conectado como ' + s.user.email);
+  route(); syncNow(); // route() também tira a tela de entrada
 }
 async function syncLogout() {
   try { await sbFetch('/auth/v1/logout', { method: 'POST' }); } catch { /* sem rede: sai assim mesmo */ }
-  setSession(null); localStorage.removeItem('syncCursor'); localStorage.setItem('syncDirty', '{}'); setSyncStatus(); toast('Desconectado (seus dados continuam neste aparelho)');
+  setSession(null); localStorage.removeItem('syncCursor'); localStorage.setItem('syncDirty', '{}'); setSyncStatus();
+}
+
+/* ---------- tela de entrada (e-mail e senha) ---------- */
+const gateNeeded = () => syncConfigured() && sbCfg().requireLogin !== false && !getSession();
+function showLoginGate(optional) {
+  document.body.classList.add('gated'); let mode = 'in', busy = false, email = '';
+  const T = { in: ['Entrar', 'Entre para abrir o seu acervo.'], up: ['Criar conta', 'Crie a sua conta (e-mail e senha).'], forgot: ['Enviar e-mail', 'Vamos enviar um e-mail para você definir uma nova senha.'], link: ['Enviar link', 'Receba um link de acesso por e-mail, sem senha.'] };
+  const draw = (msg, ok) => {
+    const pw = mode === 'in' || mode === 'up';
+    app.innerHTML = `<div class="card gate"><h1 style="text-align:center;margin-top:0">✝ Pregar</h1><p class="mute" style="text-align:center">${T[mode][1]}</p>
+     <form id="gf" novalidate><label for="ge">E-mail</label><input id="ge" type="email" autocomplete="username" inputmode="email" value="${esc(email)}">
+     ${pw ? `<label for="gp">Senha</label><div class="row" style="flex-wrap:nowrap"><input id="gp" type="password" autocomplete="${mode === 'up' ? 'new-password' : 'current-password'}"><button type="button" class="sec" id="gs" aria-label="Mostrar ou esconder a senha">👁</button></div>` : ''}
+     ${mode === 'up' ? '<label for="gp2">Repita a senha</label><input id="gp2" type="password" autocomplete="new-password"><p class="mute" style="font-size:13px">Mínimo de 8 caracteres.</p>' : ''}
+     <div id="gerr" role="alert" style="margin:8px 0;min-height:1.3em;color:${ok ? 'var(--ok)' : 'var(--bad)'}">${esc(msg || '')}</div>
+     <button id="gb" style="width:100%">${T[mode][0]}</button></form>
+     <div class="row" style="justify-content:center;margin-top:12px;gap:8px">${mode !== 'in' ? '<button type="button" class="sec sm" data-m="in">Já tenho conta</button>' : ''}${mode !== 'up' ? '<button type="button" class="sec sm" data-m="up">Criar conta</button>' : ''}${mode === 'in' ? '<button type="button" class="sec sm" data-m="forgot">Esqueci a senha</button><button type="button" class="sec sm" data-m="link">Entrar por link</button>' : ''}${optional ? '<button type="button" class="sec sm" data-m="x">Voltar</button>' : ''}</div>
+     <p class="mute" style="text-align:center;font-size:12px;margin-top:14px">Depois de entrar uma vez, o app abre também sem internet.</p></div>`;
+    const f = $('#gf'), e = $('#ge'); (email ? $('#gp') || e : e).focus();
+    $$('[data-m]').forEach(b => b.onclick = () => { email = e.value.trim(); if (b.dataset.m === 'x') { document.body.classList.remove('gated'); return route(); } mode = b.dataset.m; draw(); });
+    if ($('#gs')) $('#gs').onclick = () => { const t = $('#gp').type === 'password' ? 'text' : 'password'; $('#gp').type = t; if ($('#gp2')) $('#gp2').type = t; };
+    f.onsubmit = async ev => {
+      ev.preventDefault(); if (busy) return; email = e.value.trim(); const pw1 = $('#gp') ? $('#gp').value : '', pw2 = $('#gp2') ? $('#gp2').value : '';
+      if (!/^\S+@\S+\.\S+$/.test(email)) return draw('Digite um e-mail válido.');
+      if (pw && !pw1) return draw('Digite a senha.');
+      if (mode === 'up') { if (pw1.length < 8) return draw('Use pelo menos 8 caracteres na senha.'); if (pw1 !== pw2) return draw('As duas senhas não são iguais.'); }
+      if (!navigator.onLine) return draw('Sem internet. Para entrar é preciso estar conectado.');
+      busy = true; $('#gb').disabled = true; $('#gb').textContent = 'Aguarde…';
+      try {
+        if (mode === 'in') await passwordSignIn(email, pw1);
+        else if (mode === 'up') { if (await passwordSignUp(email, pw1) === 'confirm') { busy = false; mode = 'in'; return draw('Conta criada. Enviamos um e-mail de confirmação: clique no link dele e depois entre aqui.', true); } }
+        else if (mode === 'forgot') { await sendPasswordReset(email); busy = false; return draw('Se esse e-mail tiver conta, o link para definir a nova senha foi enviado. Olhe também o spam.', true); }
+        else { await sendLoginLink(email); busy = false; return draw('Link enviado. Abra o e-mail neste aparelho e clique nele.', true); }
+      } catch (x) { busy = false; draw(x.message); }
+    };
+  };
+  draw();
 }
 
 /* ---------- o que mudou (itens "sujos") ---------- */
@@ -166,18 +252,20 @@ function renderSyncBox(box) {
   const s = getSession(), pending = Object.keys(dirtyGet()).length;
   if (!syncConfigured()) { box.innerHTML = '<p class="mute">A sincronização entre aparelhos ainda <b>não está ligada</b> neste app (falta configurar o projeto Supabase em <code>config.js</code>). Enquanto isso, use o backup para levar suas pregações de um aparelho para outro.</p>'; return; }
   if (!s) {
-    box.innerHTML = `<p class="mute">Entre com seu e-mail para sincronizar suas pregações entre o computador e o tablet. Não há senha: você recebe um link no e-mail. ⚠ Ao entrar, o que está neste aparelho é enviado para a conta.</p>
-     <div class="row"><input id="se" type="email" placeholder="seu@email.com" style="flex:1;min-width:220px" autocomplete="email"><button id="ss">Enviar link de acesso</button></div>
-     <div class="row" style="margin-top:8px"><input id="sc" inputmode="numeric" placeholder="código de 6 dígitos (se vier no e-mail)" style="flex:1;min-width:220px"><button class="sec" id="sv">Entrar com o código</button></div>`;
-    $('#ss', box).onclick = async () => { const e = $('#se', box).value.trim(); if (!e) return toast('Digite o e-mail'); try { await sendLoginLink(e); toast('Link enviado. Abra o e-mail NESTE aparelho.'); } catch (err) { toast(err.message); } };
-    $('#sv', box).onclick = async () => { try { await verifyLoginCode($('#se', box).value.trim(), $('#sc', box).value.trim()); } catch (err) { toast(err.message); } };
-    return;
+    box.innerHTML = `<p class="mute">Entre com e-mail e senha para sincronizar suas pregações entre o computador e o tablet. ⚠ Ao entrar, o que está neste aparelho é enviado para a conta.</p><button id="sgo">Entrar ou criar conta</button>`;
+    $('#sgo', box).onclick = () => showLoginGate(true); return;
   }
   const st = { ok: 'sincronizado', busy: 'sincronizando…', offline: 'sem conexão (as mudanças ficam guardadas e seguem quando voltar)', auth: 'precisa entrar de novo', error: 'erro: ' + syncState.error, idle: 'aguardando' }[syncState.kind];
   box.innerHTML = `<div class="row"><span>✅ Conectado como <b>${esc(s.user.email)}</b></span></div>
    <p class="mute">Estado: ${esc(st)}${syncState.at ? ' · última sincronização ' + new Date(syncState.at).toLocaleTimeString('pt-BR') : ''} · ${pending} mudança(s) para enviar.<br>Sincroniza: pregações (com seus materiais), ilustrações, pedidos de oração, planos de leitura, datas próprias, seus assistentes e o perfil do pregador. Não sincroniza: gravações de áudio e as configurações do aparelho (teclas, tema).</p>
-   <div class="row"><button id="sn2">Sincronizar agora</button><button class="sec" id="sa">Reenviar tudo</button><button class="sec" id="so">Sair</button></div>`;
+   <div class="row"><button id="sn2">Sincronizar agora</button><button class="sec" id="sa">Reenviar tudo</button><button class="sec" id="spw">Alterar senha</button><button class="sec" id="so">Sair</button></div>`;
+  $('#spw', box).onclick = () => newPasswordModal('Alterar senha');
   $('#sn2', box).onclick = syncNow;
   $('#sa', box).onclick = async () => { await markAllDirty(); syncNow(); };
-  $('#so', box).onclick = async () => { if (confirm('Sair da conta neste aparelho? Seus dados continuam aqui.')) { await syncLogout(); renderSyncBox(box); } };
+  $('#so', box).onclick = async () => {
+    if (!confirm('Sair da conta neste aparelho?\n\nO app voltará a pedir e-mail e senha.')) return;
+    let wipe = hasLocalData() && confirm('Apagar também as pregações e dados guardados NESTE aparelho?\n\nOK = apagar (recomendado se o aparelho é compartilhado; tudo continua na nuvem).\nCancelar = manter os dados aqui.');
+    if (wipe) { try { await syncCore.run(); } catch { /* sem rede */ } if (Object.keys(dirtyGet()).length) { alert('Há mudanças que ainda NÃO foram enviadas para a nuvem (sem internet?). Por segurança não vou apagar nada. Tente de novo com internet.'); wipe = false; } }
+    await syncLogout(); if (wipe) await wipeLocalData(); toast(wipe ? 'Saiu e apagou os dados deste aparelho' : 'Saiu (os dados continuam neste aparelho)'); route();
+  };
 }

@@ -2,5 +2,6 @@
    NUNCA coloque aqui a chave "secret" nem "service_role". Vazio = o app funciona normalmente, só sem sincronizar. */
 window.PREGAR_CONFIG = {
   supabaseUrl: 'https://pedfhqffsqpuwkurziqy.supabase.co',
-  supabaseKey: 'sb_publishable_opG2JU0_lTjodbxdpnIVPw_nNI7J_SJ'
+  supabaseKey: 'sb_publishable_opG2JU0_lTjodbxdpnIVPw_nNI7J_SJ',
+  requireLogin: true   // true = o app pede e-mail e senha ao abrir (só enquanto não houver login neste aparelho)
 };
