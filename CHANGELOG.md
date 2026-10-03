@@ -2,6 +2,10 @@
 
 Formato: [versão] - data. Versão 0.x = em construção (a sincronização na nuvem ainda não está ligada).
 
+## [0.13.1] - 2026-10-03
+### Corrigido
+- **Instalação no tablet**: o app só tinha ícone SVG e nenhum ícone para iPad (no iPad o atalho saía com uma miniatura da página e no Android a instalação podia nem ser oferecida). Agora há ícones PNG (192, 512, maskable 512 e apple-touch 180) com a cruz do app, `id` e `orientation` no manifesto e as metatags do iOS (tela cheia, nome "Pregar").
+
 ## [0.13.0] - 2026-10-03
 ### Adicionado
 - **Tela de entrada obrigatória (e-mail e senha)**: ao abrir o app sem login neste aparelho. Criar conta, "esqueci a senha" (link por e-mail e tela de nova senha), entrar por link (alternativa), mostrar/esconder senha, mensagens de erro em português. `requireLogin` em `config.js` liga/desliga.
