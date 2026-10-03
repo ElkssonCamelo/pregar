@@ -40,3 +40,9 @@
 - [ ] Verificar o link `claude.ai/new?q=` (preenchimento automático do prompt) em uso real; a cópia para a área de transferência é o plano B.
 - [ ] Atenção: a coleção `pastor-ai` (REACHRIGHT) tem a regra "nunca gerar pregação pronta"; os modelos do Pregar não seguem essa regra, a decisão é do pregador.
 - [x] Publicada a **v0.11.1** na Vercel (2026-10-03): https://meupregar.vercel.app. Antes de cada publicação: conferir backups na pasta (o `.vercelignore` os bloqueia) e testar com `node tests/slowserver.js` (internet lenta).
+
+## Login com senha (v0.13.0, 2026-10-03) — feito e publicado
+- [x] Tela de entrada obrigatória (e-mail e senha), criar conta, esqueci a senha, alterar senha, sair com segurança. Publicado em https://meupregar.vercel.app.
+- [ ] **Painel do Supabase (usuário):** desligar "Confirm email" (Authentication > Sign In / Providers > Email) para entrar logo após criar a conta; configurar Site URL e Redirect URLs (para o e-mail de "esqueci a senha"); depois de criar a PRÓPRIA conta, desligar "Allow new users to sign up".
+- [ ] Testar de verdade (só o usuário): criar conta, entrar, sincronizar entre computador e tablet. Testado só com servidor de mentira.
+- Emergência: para abrir o app sem a tela de login, em `config.js` trocar `requireLogin: true` por `false` (os dados locais continuam intactos).
