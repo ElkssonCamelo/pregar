@@ -408,7 +408,8 @@ async function route() {
   $$('#nav a').forEach(a => a.classList.toggle('on', a.dataset.r === (r === 'assist' ? 'assistentes' : r || 'home')));
   const views = { '': home, teleprompter, assist: assistWorkspace, assistentes: assistLibrary, ajustes, agenda, biblia, stats, backup, ilus: ilustracoes, plano, oracao, datas, s: editor, pregar: preach, slides: slidesView };
   scrollTo(0, 0); projSermon = null; app.onclick = null; kbActions = {};
-  await (views[r] || home)(id, id2);
+  try { await (views[r] || home)(id, id2); }
+  catch (e) { console.error('erro na tela', r, e); app.innerHTML = `<div class="card"><h2>Algo deu errado ao abrir esta tela</h2><p class="mute">${esc(e.message)}</p><p>Seus dados estão guardados. Tente recarregar a página.</p><button onclick="location.reload()">Recarregar</button> <a class="btn sec" href="#/">Ir para o Acervo</a></div>`; }
 }
 
 /* ========== Acervo ========== */
@@ -958,10 +959,12 @@ $('#th').onclick = () => { const dark = (document.documentElement.dataset.theme 
 
 /* ========== início ========== */
 (async () => {
+  if (document.readyState === 'loading') await new Promise(r => addEventListener('DOMContentLoaded', r, { once: true })); // scripts ao fim do body: DOMContentLoaded só dispara depois de todos executarem
   sermons = await dbAll('sermons'); ilus = await dbAll('ilus'); pray = await dbAll('pray');
   addEventListener('hashchange', route); route();
-  reminders(); setInterval(reminders, 60000);
-  if (typeof syncStart === 'function') syncStart();
-  autoBackup().catch(e => console.warn('backup automático', e)); setInterval(() => autoBackup().catch(() => {}), 3600e3);
-  if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js');
+  if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(e => console.warn('modo offline indisponível', e));
+  const safe = (nome, fn) => { try { const r = fn(); if (r && r.catch) r.catch(e => console.warn(nome, e)); } catch (e) { console.warn(nome, e); } };
+  safe('lembretes', () => { reminders(); setInterval(reminders, 60000); });
+  safe('sincronização', () => typeof syncStart === 'function' && syncStart());
+  safe('backup automático', () => { const f = () => autoBackup(); f(); setInterval(() => safe('backup automático', f), 3600e3); });
 })();

@@ -2,6 +2,12 @@
 
 Formato: [versão] - data. Versão 0.x = em construção (a sincronização na nuvem ainda não está ligada).
 
+## [0.11.1] - 2026-10-03
+### Corrigido
+- **Tela em branco na primeira abertura do site publicado** (conexão mais lenta): o app começava a montar a tela antes de todos os scripts terminarem de carregar (`teleprompter is not defined`, `autoBackup is not defined`) e o modo offline nem chegava a ativar. Agora o início espera todos os scripts (DOMContentLoaded).
+- Uma falha em tela ou recurso opcional (lembretes, sincronização, backup automático, modo offline) não derruba mais o app: vira aviso no console ou mensagem na tela com botão "Recarregar".
+- `tests/slowserver.js`: servidor de teste que atrasa os scripts para reproduzir esse tipo de falha.
+
 ## [0.11.0] - 2026-10-03
 ### Adicionado
 - **Teleprompter** (`teleprompter.js`): rolagem automática em palavras por minuto (40 a 300) ou por "durar N min", contagem regressiva 3-2-1, linha-guia, espelho, 4 temas de cor, tamanho da letra, largura e espaço entre linhas, barra de progresso com tempo decorrido e "faltam". Toque no texto pausa/continua; arrastar rola à mão; a barra some enquanto lê.
