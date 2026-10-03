@@ -406,7 +406,7 @@ async function route() {
   if (cleanup) { cleanup(); cleanup = null; }
   const [, r = '', id, id2] = location.hash.replace('#', '').split('/');
   $$('#nav a').forEach(a => a.classList.toggle('on', a.dataset.r === (r === 'assist' ? 'assistentes' : r || 'home')));
-  const views = { '': home, assist: assistWorkspace, assistentes: assistLibrary, ajustes, agenda, biblia, stats, backup, ilus: ilustracoes, plano, oracao, datas, s: editor, pregar: preach, slides: slidesView };
+  const views = { '': home, teleprompter, assist: assistWorkspace, assistentes: assistLibrary, ajustes, agenda, biblia, stats, backup, ilus: ilustracoes, plano, oracao, datas, s: editor, pregar: preach, slides: slidesView };
   scrollTo(0, 0); projSermon = null; app.onclick = null; kbActions = {};
   await (views[r] || home)(id, id2);
 }
@@ -453,7 +453,7 @@ async function editor(id) {
     <label>Aplicação</label><textarea data-f="application">${esc(t.application)}</textarea>
     <div class="row"><label style="flex:1">Ilustração</label><button class="sec sm" data-act="ilpick">📚 Do banco</button><button class="sec sm" data-act="ilsave">💾 Guardar no banco</button></div><textarea data-f="illustration">${esc(t.illustration)}</textarea></div>`;
   app.innerHTML = `<div class="row"><h1 style="flex:1">Editar pregação</h1>
-    <a class="btn sec" href="#/assist/${s.id}">✨ Assistentes</a><a class="btn sec" href="#/slides/${s.id}">Slides</a><a class="btn" href="#/pregar/${s.id}">▶ Pregar</a><button class="sec" id="dup">Duplicar</button><button class="sec" id="exp">Word / Markdown</button><button class="sec" id="pdf">PDF / Imprimir</button><button class="del" id="del">Excluir</button></div>
+    <a class="btn sec" href="#/assist/${s.id}">✨ Assistentes</a><a class="btn sec" href="#/teleprompter/${s.id}/esboco">Teleprompter</a><a class="btn sec" href="#/slides/${s.id}">Slides</a><a class="btn" href="#/pregar/${s.id}">▶ Pregar</a><button class="sec" id="dup">Duplicar</button><button class="sec" id="exp">Word / Markdown</button><button class="sec" id="pdf">PDF / Imprimir</button><button class="del" id="del">Excluir</button></div>
   <div class="card"><label>Título</label><input data-m="title" value="${esc(s.title)}">
    <div class="grid"><div><label>Texto-base</label><input data-m="baseText" value="${esc(s.baseText)}" placeholder="Salmos 23:1-6"></div>
    <div><label>Pasta</label><input data-m="folder" list="folders" value="${esc(s.folder || '')}"><datalist id="folders">${[...new Set(sermons.map(x => x.folder).filter(Boolean))].map(f => `<option value="${esc(f)}">`).join('')}</datalist></div>

@@ -169,14 +169,14 @@ async function assistWorkspace(id, aid) {
    <div style="flex:1;min-width:280px" id="aw"></div></div><h2>Materiais desta pregação (${s.materials.length})</h2><div id="mats"></div>`;
   const drawMats = () => {
     $('#mats').innerHTML = s.materials.length ? s.materials.slice().sort((a, b) => b.updatedAt - a.updatedAt).map(m => `<details class="card" data-m="${m.id}"><summary><b>${esc(m.title)}</b> <span class="st">${MAT_TYPES[m.type] || 'Outro'}</span> <span class="mute">${fmtDate(new Date(m.updatedAt).toISOString().slice(0, 10))} · ${m.text.length} caracteres</span></summary>
-      <textarea data-t style="min-height:220px;margin-top:8px">${esc(m.text)}</textarea><div class="row" style="margin-top:8px"><button class="sm" data-k="copy">Copiar</button><button class="sm sec" data-k="wa">WhatsApp</button><button class="sm sec" data-k="docx">Word</button><button class="sm sec" data-k="md">Markdown</button><button class="sm del" data-k="del">Excluir</button></div></details>`).join('') : '<p class="mute">Nenhum material ainda. Gere um com um assistente acima ou cole um texto seu.</p>';
+      <textarea data-t style="min-height:220px;margin-top:8px">${esc(m.text)}</textarea><div class="row" style="margin-top:8px"><button class="sm" data-k="copy">Copiar</button><button class="sm sec" data-k="tp">Teleprompter</button><button class="sm sec" data-k="wa">WhatsApp</button><button class="sm sec" data-k="docx">Word</button><button class="sm sec" data-k="md">Markdown</button><button class="sm del" data-k="del">Excluir</button></div></details>`).join('') : '<p class="mute">Nenhum material ainda. Gere um com um assistente acima ou cole um texto seu.</p>';
   };
   drawMats();
   const saveM = debounce(() => saveS(s).then(() => toast('Salvo')), 600);
   $('#mats').oninput = e => { if (e.target.dataset.t === undefined) return; const m = s.materials.find(x => x.id === e.target.closest('[data-m]').dataset.m); m.text = e.target.value; m.updatedAt = Date.now(); saveM(); };
   $('#mats').onclick = async e => {
     const k = e.target.dataset.k, el = e.target.closest('[data-m]'); if (!k || !el) return; const m = s.materials.find(x => x.id === el.dataset.m);
-    if (k === 'copy') copyText(m.text); if (k === 'wa') shareWhatsApp(m.text);
+    if (k === 'copy') copyText(m.text); if (k === 'wa') shareWhatsApp(m.text); if (k === 'tp') location.hash = `#/teleprompter/${s.id}/${m.id}`;
     if (k === 'docx') downloadBlob(new Blob([DocxLib.makeDocx(textToBlocks(m.title, m.text))]), slug(m.title) + '.docx');
     if (k === 'md') downloadBlob(new Blob([`# ${m.title}\n\n${m.text}\n`], { type: 'text/markdown' }), slug(m.title) + '.md');
     if (k === 'del' && confirm('Excluir este material?')) { s.materials = s.materials.filter(x => x.id !== m.id); await saveS(s); drawMats(); }

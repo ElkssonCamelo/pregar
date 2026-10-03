@@ -2,6 +2,15 @@
 
 Formato: [versão] - data. Versão 0.x = em construção (a sincronização na nuvem ainda não está ligada).
 
+## [0.11.0] - 2026-10-03
+### Adicionado
+- **Teleprompter** (`teleprompter.js`): rolagem automática em palavras por minuto (40 a 300) ou por "durar N min", contagem regressiva 3-2-1, linha-guia, espelho, 4 temas de cor, tamanho da letra, largura e espaço entre linhas, barra de progresso com tempo decorrido e "faltam". Toque no texto pausa/continua; arrastar rola à mão; a barra some enquanto lê.
+- Abre a partir de um **material** (botão no card), do **esboço da pregação** (com o texto dos versículos), de **texto colado** ou da tela Teleprompter (menu). Marcações `[pausa]` viram selos e podem parar a leitura por 2 s; `[notas]` ficam esmaecidas; `# títulos` e `**negrito**` funcionam.
+- Atalhos e pedal: Espaço, ↑/↓ velocidade, setas/PageUp/PageDown pulam (as teclas de Ajustes valem), +/− letra, M espelho, G guia, R início, F tela cheia, Esc sai. Configurações lembradas.
+
+### Corrigido
+- Modo offline: o service worker agora **sempre revalida** com o servidor (`cache: 'no-cache'`); antes, uma atualização podia demorar a chegar ao aparelho por causa do cache do navegador.
+
 ## [0.10.0] - 2026-10-03
 ### Adicionado
 - **Assistentes** (`assistentes.js`): biblioteca de prompts com variáveis (`{{titulo}}`, `{{topicos}}`, `{{texto_biblico}}`, `{{perfil}}`…) que o app preenche com os dados da pregação. Botões "Abrir no Claude" (prompt preenchido; se longo, copiado) e "Copiar prompt"; o resultado volta como **material** guardado na pregação.
