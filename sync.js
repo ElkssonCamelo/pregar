@@ -76,12 +76,13 @@ function syncList(kind, oldList, newList) { // planos e datas próprias vivem em
 }
 async function markAllDirty() { // ao entrar: tudo que existe neste aparelho vai para a conta (o mais novo vence; nada é apagado)
   const d = dirtyGet(), put = { sermon: 'sermons', ilus: 'ilus', pray: 'pray' };
-  const all = [['sermon', sermons], ['ilus', ilus], ['pray', pray], ['plan', getPlans()], ['cdate', getCustomDates()]];
+  const all = [['sermon', sermons], ['ilus', ilus], ['pray', pray], ['plan', getPlans()], ['cdate', getCustomDates()], ['assist', getAssists()], ['profile', getProfileList()]];
   for (const [kind, list] of all) for (const it of list) {
     if (!it.updatedAt) { it.updatedAt = it.createdAt || Date.now(); if (put[kind]) await tx(put[kind], 'readwrite', o => o.put(it)); }
     d[kind + '|' + it.id] = { kind, id: it.id, seq: nextSeq() };
   }
   const pl = getPlans(), cd = getCustomDates(); if (pl.some(x => x.updatedAt)) localStorage.setItem('plans', JSON.stringify(pl)); if (cd.length) localStorage.setItem('customDates', JSON.stringify(cd));
+  const as = getAssists(), pf = getProfileList(); if (as.length) localStorage.setItem('assistants', JSON.stringify(as)); if (pf.length) localStorage.setItem('profile', JSON.stringify(pf));
   dirtySet(d);
 }
 
@@ -92,7 +93,7 @@ const syncStore = {
   clearDirty: sent => { const d = dirtyGet(); sent.forEach(([k, s]) => { if (d[k] && d[k].seq === s) delete d[k]; }); dirtySet(d); },
   getCursor: () => localStorage.getItem('syncCursor'),
   setCursor: c => { if (c) localStorage.setItem('syncCursor', c); },
-  get(kind, id) { return ({ sermon: sermons, ilus, pray, plan: getPlans(), cdate: getCustomDates() })[kind].find(x => x.id === id); },
+  get(kind, id) { return ({ sermon: sermons, ilus, pray, plan: getPlans(), cdate: getCustomDates(), assist: getAssists(), profile: getProfileList() })[kind].find(x => x.id === id); },
   async apply(kind, id, item) { // grava o que veio de outro aparelho SEM disparar nova sincronização (usa tx direto, não dbPut)
     remoteChanged++;
     const mem = { sermon: [sermons, 'sermons'], ilus: [ilus, 'ilus'], pray: [pray, 'pray'] }[kind];
@@ -101,7 +102,7 @@ const syncStore = {
       if (item === null) { if (i >= 0) arr.splice(i, 1); await tx(store, 'readwrite', o => o.delete(id)); if (kind === 'sermon') await tx('audio', 'readwrite', o => o.delete(id)); }
       else { if (i >= 0) arr[i] = item; else arr.push(item); await tx(store, 'readwrite', o => o.put(item)); }
     } else {
-      const key = kind === 'plan' ? 'plans' : 'customDates', list = JSON.parse(localStorage.getItem(key) || '[]'), i = list.findIndex(x => x.id === id);
+      const key = { plan: 'plans', cdate: 'customDates', assist: 'assistants', profile: 'profile' }[kind], list = JSON.parse(localStorage.getItem(key) || '[]'), i = list.findIndex(x => x.id === id);
       if (item === null) { if (i >= 0) list.splice(i, 1); } else if (i >= 0) list[i] = item; else list.push(item);
       localStorage.setItem(key, JSON.stringify(list));
     }
@@ -174,7 +175,7 @@ function renderSyncBox(box) {
   }
   const st = { ok: 'sincronizado', busy: 'sincronizando…', offline: 'sem conexão (as mudanças ficam guardadas e seguem quando voltar)', auth: 'precisa entrar de novo', error: 'erro: ' + syncState.error, idle: 'aguardando' }[syncState.kind];
   box.innerHTML = `<div class="row"><span>✅ Conectado como <b>${esc(s.user.email)}</b></span></div>
-   <p class="mute">Estado: ${esc(st)}${syncState.at ? ' · última sincronização ' + new Date(syncState.at).toLocaleTimeString('pt-BR') : ''} · ${pending} mudança(s) para enviar.<br>Sincroniza: pregações, ilustrações, pedidos de oração, planos de leitura e datas próprias. Não sincroniza: gravações de áudio e as configurações do aparelho (teclas, tema).</p>
+   <p class="mute">Estado: ${esc(st)}${syncState.at ? ' · última sincronização ' + new Date(syncState.at).toLocaleTimeString('pt-BR') : ''} · ${pending} mudança(s) para enviar.<br>Sincroniza: pregações (com seus materiais), ilustrações, pedidos de oração, planos de leitura, datas próprias, seus assistentes e o perfil do pregador. Não sincroniza: gravações de áudio e as configurações do aparelho (teclas, tema).</p>
    <div class="row"><button id="sn2">Sincronizar agora</button><button class="sec" id="sa">Reenviar tudo</button><button class="sec" id="so">Sair</button></div>`;
   $('#sn2', box).onclick = syncNow;
   $('#sa', box).onclick = async () => { await markAllDirty(); syncNow(); };

@@ -2,6 +2,21 @@
 
 Formato: [versão] - data. Versão 0.x = em construção (a sincronização na nuvem ainda não está ligada).
 
+## [0.10.0] - 2026-10-03
+### Adicionado
+- **Assistentes** (`assistentes.js`): biblioteca de prompts com variáveis (`{{titulo}}`, `{{topicos}}`, `{{texto_biblico}}`, `{{perfil}}`…) que o app preenche com os dados da pregação. Botões "Abrir no Claude" (prompt preenchido; se longo, copiado) e "Copiar prompt"; o resultado volta como **material** guardado na pregação.
+- **10 modelos iniciais genéricos** (gerar pregação, tutor, análise teológica, estudo bíblico, pregação para mim, estudo de célula, WhatsApp, roteiro de Reels, devocional, série). Duplicar/editar/excluir; **importar prompts do usuário** (.md/.txt, inclusive formato SKILL.md com cabeçalho).
+- **Perfil do pregador** (Ajustes): igreja, denominação, tradução, público, tom e regras, usado em todos os assistentes.
+- **Materiais por pregação**: editar, copiar, enviar por WhatsApp (mensagens longas vão pela área de transferência), exportar Word/Markdown.
+- Backup e sincronização passam a incluir assistentes e perfil (esquema do banco atualizado: tipos `assist` e `profile`).
+
+### Decisões
+- A IA roda fora do app (Claude), sem custo de API. "Gerar aqui dentro" (API pelo servidor, pago por uso, com login) fica para depois do Supabase.
+- Os prompts do usuário ficam nos dados dele, não no código público. Nenhum texto da coleção pastor-ai (terceiros, licença desconhecida) foi copiado.
+
+### Corrigido
+- Duplicar um modelo inicial não salvava a cópia.
+
 ## [0.9.0] - 2026-10-02
 Primeira versão completa do Pregar (PWA 100% local, sem servidor).
 

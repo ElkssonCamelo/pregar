@@ -26,12 +26,14 @@ addEventListener('keydown', e => {
 
 /* ========== backup ========== */
 const bkpCfg = () => ({ auto: true, freq: 'daily', keep: 7, ...JSON.parse(localStorage.getItem('bkpCfg') || '{}') });
-const buildBackup = () => ({ app: 'pregar', at: new Date().toISOString(), sermons, ilus, pray, plans: getPlans(), customDates: getCustomDates() });
+const buildBackup = () => ({ app: 'pregar', at: new Date().toISOString(), sermons, ilus, pray, plans: getPlans(), customDates: getCustomDates(), assistants: getAssists(), profile: getProfileList() });
 async function applyBackup(j) { // mescla por id (o que vem do backup substitui o igual)
   if (!j || !Array.isArray(j.sermons)) throw new Error('arquivo inválido');
   const merge = async (arr, list, store) => { for (const x of list || []) { const i = arr.findIndex(y => y.id === x.id); if (i >= 0) arr[i] = x; else arr.push(x); await dbPut(store, x); } };
   await merge(sermons, j.sermons, 'sermons'); await merge(ilus, j.ilus, 'ilus'); await merge(pray, j.pray, 'pray');
   if (Array.isArray(j.customDates)) { const cur = getCustomDates(); j.customDates.forEach(d => { if (!cur.some(x => x.id === d.id)) cur.push(d); }); setCustomDates(cur); }
+  if (Array.isArray(j.assistants)) { const cur = getAssists(); j.assistants.forEach(x => { const k = cur.findIndex(y => y.id === x.id); if (k >= 0) cur[k] = x; else cur.push(x); }); setAssists(cur); }
+  if (Array.isArray(j.profile) && j.profile[0] && !getProfileList().length) setProfile(j.profile[0]);
   if (Array.isArray(j.plans)) { const cur = getPlans(); j.plans.forEach(p => { const k = cur.findIndex(x => x.id === p.id); if (k >= 0) cur[k] = p; else cur.push(p); }); setPlans(cur); }
   return j.sermons.length;
 }
@@ -91,6 +93,7 @@ async function ajustes() {
      ${km[a].map(k => `<span class="tag">${esc(keyLabel(k))} <a data-rk="${a}|${esc(k)}" style="cursor:pointer">✕</a></span>`).join('') || '<span class="mute">sem tecla</span>'}
      <button class="sec sm" data-ck="${a}">${capturing === a ? 'aperte uma tecla…' : '+ tecla'}</button></div>`).join('')}
    <div class="row" style="margin-top:10px"><span class="mute">Última tecla detectada: <b id="lk">${esc(lastKeyText)}</b></span><button class="sec sm" id="kr" style="margin-left:auto">Restaurar padrão</button></div></div>
+  <h2>Perfil do pregador</h2><div class="card" id="profilebox"></div>
   <h2>Conta e sincronização</h2><div class="card" id="syncbox"></div>
   <h2>Backup automático</h2><div class="card">
    <label style="display:flex;gap:6px;align-items:center;margin:0"><input type="checkbox" id="ba" style="width:auto" ${c.auto ? 'checked' : ''}> Criar pontos de restauração automaticamente ao abrir o app</label>
@@ -109,6 +112,7 @@ async function ajustes() {
   $$('[data-ck]').forEach(b => b.onclick = () => { capturing = b.dataset.ck; ajustes(); });
   $$('[data-rk]').forEach(b => b.onclick = () => { const [a, k] = b.dataset.rk.split('|'), m = getKeys(); m[a] = m[a].filter(x => x !== k); setKeys(m); ajustes(); });
   $('#kr').onclick = () => { localStorage.removeItem('keymap'); ajustes(); };
+  if (typeof renderProfileBox === 'function') renderProfileBox($('#profilebox'));
   if (typeof renderSyncBox === 'function') renderSyncBox($('#syncbox'));
   const save = () => { localStorage.setItem('bkpCfg', JSON.stringify({ auto: $('#ba').checked, freq: $('#bf').value, keep: +$('#bk2').value })); };
   ['ba', 'bf', 'bk2'].forEach(i => $('#' + i).onchange = save);
