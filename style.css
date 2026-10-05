@@ -207,3 +207,23 @@ summary{cursor:pointer}
 body.preaching #demobar,body.prompting #demobar{display:none}
 body.demo .brand::after{content:" · demonstração";font:600 12px var(--sans,sans-serif);letter-spacing:.04em;color:var(--acc);text-transform:uppercase}
 @media(max-width:420px){body.demo .brand::after{content:" · demo"}}
+
+/* Bíblia: livros, capítulos e leitura com destaque */
+.bk-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+@media(min-width:700px){.bk-grid{grid-template-columns:repeat(auto-fill,minmax(190px,1fr))}}
+.bk{display:flex;justify-content:space-between;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px;min-height:52px;color:var(--ink);text-decoration:none;box-shadow:var(--shadow)}
+.bk:hover{border-color:var(--acc)}.bk .mute{font-size:12px;white-space:nowrap}
+.chip.on{background:var(--pri);color:var(--on-pri)}
+.ch-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(60px,1fr));gap:8px}
+.chn{display:flex;align-items:center;justify-content:center;min-height:54px;background:var(--card);border:1px solid var(--line);border-radius:10px;color:var(--ink);text-decoration:none;font:600 18px var(--serif)}
+.chn:hover{border-color:var(--acc)}
+.rd-top{display:flex;gap:8px;align-items:center;flex-wrap:wrap;position:sticky;top:57px;background:var(--bg);padding:8px 0;z-index:5;border-bottom:1px solid var(--line)}
+.rd-ref{font:650 20px var(--serif)}
+.bread{font-family:var(--serif);font-size:var(--bs,22px);line-height:1.8;max-width:70ch;margin:14px auto 120px}
+.bread .vs{cursor:pointer;border-radius:4px;padding:1px 0;-webkit-box-decoration-break:clone;box-decoration-break:clone}
+.bread .vs sup{color:var(--acc-text);font:700 .55em var(--sans,sans-serif);margin-right:3px;vertical-align:super}
+.bread .vs.sel{outline:2px solid var(--acc);outline-offset:1px}
+#hlbar{position:fixed;left:0;right:0;margin:0 auto;width:fit-content;bottom:calc(84px + env(safe-area-inset-bottom));z-index:40;display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:center;background:var(--card);border:1px solid var(--acc);border-radius:14px;padding:8px 12px;box-shadow:0 8px 28px rgba(0,0,0,.35);max-width:calc(100vw - 24px)}
+#hlbar[hidden]{display:none}
+#hlbar .sw{width:44px;height:44px;min-height:44px;padding:0;border-radius:50%;border:2px solid var(--line)}
+@media(min-width:900px) and (pointer:fine){#hlbar{bottom:24px}}

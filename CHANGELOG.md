@@ -2,6 +2,12 @@
 
 Formato: [versão] - data. Versão 0.x = em construção (a sincronização na nuvem ainda não está ligada).
 
+## [0.18.0] - 2026-10-05
+### Alterado
+- **Bíblia reformulada** (inspirada em app de referência): grade de livros em duas colunas com número de capítulos, filtros Antigo/Novo Testamento e busca de livro; depois do livro, grade de capítulos; leitura em texto corrido com número de versículo pequeno, letra ajustável (A−/A+), capítulo anterior/próximo e "Ir direto" por referência digitada. Rotas `#/biblia/<livro>/<capítulo>`.
+### Adicionado
+- **Destaque de cores** nos versículos (dourado, verde, azul, rosa): toque em um ou mais versículos e escolha a cor; "Projetar" envia a seleção ao projetor. Os destaques ficam neste aparelho (e entram no backup); a sincronização entre aparelhos fica para depois.
+
 ## [0.17.0] - 2026-10-05
 ### Adicionado
 - **Modo demonstração** (`index.html?demo`, ou link em Configurações): abre o app cheio de exemplos fictícios (pregação completa com slides, oração, ilustrações, datas, plano de leitura, perfil). Usa um banco separado e memória temporária, não lê nem altera seus dados e **não sincroniza** (sem login e sem nuvem); tudo recomeça limpo ao recarregar. Faixa dourada no topo e "demonstração" ao lado do nome indicam o modo.

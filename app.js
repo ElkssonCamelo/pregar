@@ -754,15 +754,40 @@ function bibleModal() {
   $('#bg', m).onclick = go; $('#br', m).onkeydown = e => e.key === 'Enter' && go(); $('#bx', m).onclick = () => m.remove(); $('#br', m).focus();
 }
 
-/* ========== Bíblia ========== */
-function biblia() {
-  app.innerHTML = `<h1>Bíblia</h1><div class="card"><div class="row"><select id="ver" style="width:auto" aria-label="Versão da Bíblia"><option value="acf">Almeida Corrigida Fiel (offline)</option>${customVers().map(v => `<option value="${esc(v.id)}">${esc(v.name)} (importada)</option>`).join('')}<option value="almeida">Almeida (online)</option><option value="kjv">King James (EN)</option></select>
-   <input id="br" placeholder="ex.: João 3:16-18 ou Salmos 23" style="flex:1;min-width:200px" aria-label="Passagem da Bíblia"><button id="bg">Buscar</button></div><p class="mute">A Almeida Corrigida Fiel está embutida e funciona sem internet. As versões online precisam de internet na primeira consulta. Clique em um versículo para projetá-lo.</p></div>
-   <details class="card"><summary><b>Importar minha versão da Bíblia</b></summary>
-    <p class="mute">Use somente texto que você tem direito de usar (ex.: NVT, NVI). O arquivo é lido no seu aparelho e <b>não é enviado a lugar nenhum</b>. Formato JSON com os 66 livros em ordem bíblica: <code>[{"chapters":[["v1","v2"],…]},…]</code>, <code>[[["v1"]]]</code> ou <code>{"Gênesis":{"1":{"1":"texto"}}}</code>.</p>
+/* ========== Bíblia: livros → capítulos → leitura com destaque de cores ========== */
+const CHAPS = [50,40,27,36,34,24,21,4,31,24,22,25,29,36,10,13,10,42,150,31,12,8,66,52,5,48,12,14,3,9,1,4,7,3,3,3,2,14,4,28,16,24,21,28,16,16,13,6,6,4,4,5,3,6,4,3,1,13,5,5,3,5,1,1,1,22]; // capítulos por livro (66)
+const HLC = { y: ['Dourado', 'rgba(216,180,92,.5)'], g: ['Verde', 'rgba(110,170,100,.45)'], b: ['Azul', 'rgba(90,150,210,.45)'], r: ['Rosa', 'rgba(220,110,140,.45)'] };
+const getHL = () => { try { return JSON.parse(localStorage.getItem('bibleHL') || '{}'); } catch { return {}; } };
+const setHL = o => localStorage.setItem('bibleHL', JSON.stringify(o));
+const bibleName = () => bibleVer() === 'acf' ? 'ACF' : bibleVer() === 'almeida' ? 'Almeida' : bibleVer() === 'kjv' ? 'KJV' : ((customVers().find(v => v.id === bibleVer()) || {}).name || '');
+function biblia(a, b) {
+  const bi = a !== undefined && a !== '' ? +a : -1, ch = b ? +b : 0;
+  if (bi >= 0 && (bi > 65 || isNaN(bi))) { location.hash = '#/biblia'; return; }
+  if (bi >= 0 && ch) return bibleReader(bi, ch);
+  if (bi >= 0) return bibleChapters(bi);
+  return bibleBooks();
+}
+function bibleBooks() {
+  const filt = sessionStorage.getItem('bibFilt') || 'todos';
+  app.innerHTML = `<div class="row"><h1 style="flex:1">Bíblia <span class="st">${esc(bibleName())}</span></h1></div>
+   <div class="card"><div class="row"><input id="br" placeholder="Ir direto: João 3:16 ou Salmos 23" style="flex:1;min-width:200px" aria-label="Ir direto para uma passagem"><button id="bg">Abrir</button></div></div>
+   <div class="row" style="margin:10px 0"><input id="bq" placeholder="Buscar livro…" style="flex:1;min-width:160px" aria-label="Buscar livro"><span id="bf" class="row" style="gap:6px">${[['todos', 'Todos'], ['at', 'Antigo Testamento'], ['nt', 'Novo Testamento']].map(([k, n]) => `<button class="sm chip ${filt === k ? 'on' : 'sec'}" data-f="${k}">${n}</button>`).join('')}</span></div>
+   <div id="bk" class="bk-grid"></div>
+   <details class="card" style="margin-top:14px"><summary><b>Versão da Bíblia e importação</b></summary>
+    <div class="row" style="margin-top:8px"><select id="ver" style="width:auto" aria-label="Versão da Bíblia"><option value="acf">Almeida Corrigida Fiel (offline)</option>${customVers().map(v => `<option value="${esc(v.id)}">${esc(v.name)} (importada)</option>`).join('')}<option value="almeida">Almeida (online)</option><option value="kjv">King James (EN)</option></select></div>
+    <p class="mute">A Almeida Corrigida Fiel está embutida e funciona sem internet. As versões online precisam de internet na primeira consulta.</p>
+    <p class="mute"><b>Importar minha versão:</b> use somente texto que você tem direito de usar (ex.: NVT, NVI). O arquivo é lido no seu aparelho e <b>não é enviado a lugar nenhum</b>. Formato JSON com os 66 livros em ordem bíblica: <code>[{"chapters":[["v1","v2"],…]},…]</code>, <code>[[["v1"]]]</code> ou <code>{"Gênesis":{"1":{"1":"texto"}}}</code>.</p>
     <div class="row"><input id="vn" placeholder="Nome (ex.: NVT)" style="flex:1" aria-label="Nome da versão importada"><label class="btn" style="margin:0">Escolher arquivo<input type="file" id="vf" accept=".json" hidden></label></div>
-    <div id="vl">${customVers().map(v => `<div class="row" style="margin-top:6px"><span style="flex:1">${esc(v.name)}</span><button class="del sm" data-rm="${esc(v.id)}">Remover</button></div>`).join('')}</div></details>
-   <div id="bo"></div>`;
+    <div id="vl">${customVers().map(v => `<div class="row" style="margin-top:6px"><span style="flex:1">${esc(v.name)}</span><button class="del sm" data-rm="${esc(v.id)}">Remover</button></div>`).join('')}</div></details>`;
+  const draw = () => {
+    const q = norm($('#bq').value), f = sessionStorage.getItem('bibFilt') || 'todos';
+    $('#bk').innerHTML = BOOKS.map((bk, i) => [bk, i]).filter(([bk, i]) => (f === 'todos' || (f === 'at') === (i < 39)) && (!q || norm(bk[0]).includes(q) || norm(bk[1]).includes(q)))
+      .map(([bk, i]) => `<a class="bk" href="#/biblia/${i}"><b>${esc(bk[0])}</b><span class="mute">${CHAPS[i]} cap.</span></a>`).join('') || '<p class="mute">Nenhum livro encontrado.</p>';
+  };
+  draw(); $('#bq').oninput = draw;
+  $('#bf').onclick = e => { const k = e.target.dataset.f; if (!k) return; sessionStorage.setItem('bibFilt', k); $$('#bf .chip').forEach(x => { x.classList.toggle('sec', x.dataset.f !== k); x.classList.toggle('on', x.dataset.f === k); }); draw(); };
+  const go = () => { const p = parseRef($('#br').value); if (!p) return toast('Referência não reconhecida'); const i = BOOKS.findIndex(x => x[0] === p.pt); if (+p.ch > CHAPS[i]) return toast(p.pt + ' tem só ' + CHAPS[i] + ' capítulos'); sessionStorage.setItem('bibVerse', (p.v || '').split(/[-,]/)[0]); location.hash = `#/biblia/${i}/${+p.ch}`; };
+  $('#bg').onclick = go; $('#br').onkeydown = e => e.key === 'Enter' && go();
   $('#vf').onchange = async e => {
     const name = $('#vn').value.trim(), f = e.target.files[0]; if (!f) return;
     if (!name) { toast('Digite o nome da versão antes'); e.target.value = ''; return; }
@@ -777,14 +802,43 @@ function biblia() {
     await dbDel('bible', 'custom|' + id); localStorage.setItem('customVers', JSON.stringify(customVers().filter(v => v.id !== id)));
     if (bibleVer() === id) localStorage.setItem('ver', 'acf'); biblia();
   };
-  $('#ver').value = bibleVer(); $('#ver').onchange = e => localStorage.setItem('ver', e.target.value);
-  const go = async () => {
-    $('#bo').innerHTML = '<p class="mute">Carregando…</p>';
-    try { const d = await getPassage($('#br').value); $('#bo').innerHTML = `<div class="card"><h2>${esc(d.ref)}</h2>` + d.verses.map(v => `<p class="vv" data-n="${v.n}" style="cursor:pointer"><b>${v.n}</b> ${esc(v.t)} <button class="sec sm" data-x="${v.n}" title="Referências cruzadas">🔗</button></p>`).join('') + '</div>';
-      $$('.vv').forEach(p => p.onclick = e => { const bp = parseRef(d.ref); if (e.target.dataset.x) return xrefModal(`${bp.pt} ${bp.ch}:${p.dataset.n}`); sendSlide({ kind: 'verse', title: d.ref.split(':')[0] + ':' + p.dataset.n, body: p.textContent.replace(/^\d+\s/, '').replace(/\s*🔗$/, '') }); }); }
-    catch (e) { $('#bo').innerHTML = `<p>${esc(e.message)}</p>`; }
+  $('#ver').value = bibleVer(); $('#ver').onchange = e => { localStorage.setItem('ver', e.target.value); toast('Versão: ' + bibleName()); };
+}
+function bibleChapters(bi) {
+  app.innerHTML = `<div class="row"><a class="btn sec" href="#/biblia">← Livros</a><h1 style="flex:1;margin:0">${esc(BOOKS[bi][0])} <span class="st">${esc(bibleName())}</span></h1></div>
+   <p class="mute">Escolha o capítulo (${CHAPS[bi]}).</p>
+   <div class="ch-grid">${Array.from({ length: CHAPS[bi] }, (_, i) => `<a class="chn" href="#/biblia/${bi}/${i + 1}">${i + 1}</a>`).join('')}</div>`;
+}
+async function bibleReader(bi, ch) {
+  const book = BOOKS[bi][0], size = +localStorage.getItem('bibleSize') || 22, prev = ch > 1 ? `#/biblia/${bi}/${ch - 1}` : bi > 0 ? `#/biblia/${bi - 1}/${CHAPS[bi - 1]}` : '', next = ch < CHAPS[bi] ? `#/biblia/${bi}/${ch + 1}` : bi < 65 ? `#/biblia/${bi + 1}/1` : '';
+  app.innerHTML = `<div class="rd-top"><a class="btn sec sm" href="#/biblia/${bi}" aria-label="Voltar aos capítulos">←</a><b class="rd-ref">${esc(book)} ${ch} <span class="st">${esc(bibleName())}</span></b>
+    <span class="row" style="gap:4px;margin-left:auto"><button class="sec sm" id="fm" aria-label="Diminuir a letra">A−</button><button class="sec sm" id="fp" aria-label="Aumentar a letra">A+</button>
+    ${prev ? `<a class="btn sec sm" href="${prev}" aria-label="Capítulo anterior">◀</a>` : ''}${next ? `<a class="btn sec sm" href="${next}" aria-label="Próximo capítulo">▶</a>` : ''}</span></div>
+   <div id="bt" class="bread" style="--bs:${size}px"><p class="mute">Carregando…</p></div>
+   <div id="hlbar" hidden role="toolbar" aria-label="Destacar versículos selecionados"><span id="hln" class="mute"></span>
+    ${Object.entries(HLC).map(([k, [n, c]]) => `<button class="sw" data-c="${k}" style="background:${c}" aria-label="Destacar de ${n}" title="${n}"></button>`).join('')}
+    <button class="sec sm" data-c="" aria-label="Tirar o destaque">Sem cor</button><button class="sm" id="hlp">Projetar</button><button class="sec sm" id="hlx" aria-label="Limpar seleção">✕</button></div>`;
+  let d; try { d = await getPassage(`${book} ${ch}`); } catch (e) { $('#bt').innerHTML = `<p>${esc(e.message)}</p><a class="btn sec" href="#/biblia">Voltar</a>`; return; }
+  if (!$('#bt')) return; // a tela já mudou enquanto o capítulo carregava
+  const key = n => `${bi}.${ch}.${n}`, sel = new Set();
+  const paint = () => {
+    const hl = getHL();
+    $('#bt').innerHTML = d.verses.map(v => { const c = hl[key(v.n)]; return `<span class="vs${sel.has(v.n) ? ' sel' : ''}" data-n="${v.n}"${c && HLC[c] ? ` style="background:${HLC[c][1]}"` : ''}><sup>${v.n}</sup>${esc(v.t)} </span>`; }).join('');
+    $('#hlbar').hidden = !sel.size; $('#hln').textContent = sel.size ? (sel.size === 1 ? 'v. ' + [...sel][0] : sel.size + ' versículos') : '';
   };
-  $('#bg').onclick = go; $('#br').onkeydown = e => e.key === 'Enter' && go();
+  paint();
+  $('#bt').onclick = e => { const s = e.target.closest('.vs'); if (!s) return; const n = +s.dataset.n; sel.has(n) ? sel.delete(n) : sel.add(n); paint(); };
+  $('#hlbar').onclick = e => {
+    const t = e.target.closest('button'); if (!t) return;
+    if (t.id === 'hlx') { sel.clear(); return paint(); }
+    if (t.id === 'hlp') { const L = d.verses.filter(v => sel.has(v.n)); if (!L.length) return; sendSlide({ kind: 'verse', title: `${book} ${ch}:${L[0].n}${L.length > 1 ? '-' + L[L.length - 1].n : ''}`, body: L.map(v => v.t).join(' ') }); return toast('Enviado ao projetor'); }
+    if (t.dataset.c === undefined) return;
+    const hl = getHL(); sel.forEach(n => { if (t.dataset.c) hl[key(n)] = t.dataset.c; else delete hl[key(n)]; }); setHL(hl); sel.clear(); paint();
+  };
+  const setSize = n => { n = Math.max(15, Math.min(40, n)); localStorage.setItem('bibleSize', n); $('#bt').style.setProperty('--bs', n + 'px'); };
+  $('#fm').onclick = () => setSize((+localStorage.getItem('bibleSize') || 22) - 2); $('#fp').onclick = () => setSize((+localStorage.getItem('bibleSize') || 22) + 2);
+  const goV = sessionStorage.getItem('bibVerse'); sessionStorage.removeItem('bibVerse');
+  if (goV && $(`.vs[data-n="${goV}"]`)) { sel.add(+goV); paint(); $(`.vs[data-n="${goV}"]`).scrollIntoView({ block: 'center' }); }
 }
 
 /* ========== Agenda + lembretes ========== */
