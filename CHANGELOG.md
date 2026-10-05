@@ -2,6 +2,11 @@
 
 Formato: [versão] - data. Versão 0.x = em construção (a sincronização na nuvem ainda não está ligada).
 
+## [0.19.0] - 2026-10-05
+### Adicionado
+- **Destaques da Bíblia sincronizam entre aparelhos** (novo tipo `hl`, um item por capítulo; vale a edição mais recente do capítulo). Os destaques da v0.18.0 (guardados em `bibleHL`) são migrados sozinhos para o formato novo. Backup/restauração passam a levar `bibleHLs`.
+- Banco: a restrição `items_kind_check` aceita `hl` (migração `items_kind_hl` aplicada no projeto Supabase `pregar` e registrada em `supabase/schema.sql`).
+
 ## [0.18.0] - 2026-10-05
 ### Alterado
 - **Bíblia reformulada** (inspirada em app de referência): grade de livros em duas colunas com número de capítulos, filtros Antigo/Novo Testamento e busca de livro; depois do livro, grade de capítulos; leitura em texto corrido com número de versículo pequeno, letra ajustável (A−/A+), capítulo anterior/próximo e "Ir direto" por referência digitada. Rotas `#/biblia/<livro>/<capítulo>`.

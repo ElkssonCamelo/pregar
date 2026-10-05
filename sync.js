@@ -164,13 +164,14 @@ function syncList(kind, oldList, newList) { // planos e datas próprias vivem em
 }
 async function markAllDirty() { // ao entrar: tudo que existe neste aparelho vai para a conta (o mais novo vence; nada é apagado)
   const d = dirtyGet(), put = { sermon: 'sermons', ilus: 'ilus', pray: 'pray' };
-  const all = [['sermon', sermons], ['ilus', ilus], ['pray', pray], ['plan', getPlans()], ['cdate', getCustomDates()], ['assist', getAssists()], ['profile', getProfileList()]];
+  const all = [['sermon', sermons], ['ilus', ilus], ['pray', pray], ['plan', getPlans()], ['cdate', getCustomDates()], ['assist', getAssists()], ['profile', getProfileList()], ['hl', getHLList()]];
   for (const [kind, list] of all) for (const it of list) {
     if (!it.updatedAt) { it.updatedAt = it.createdAt || Date.now(); if (put[kind]) await tx(put[kind], 'readwrite', o => o.put(it)); }
     d[kind + '|' + it.id] = { kind, id: it.id, seq: nextSeq() };
   }
   const pl = getPlans(), cd = getCustomDates(); if (pl.some(x => x.updatedAt)) localStorage.setItem('plans', JSON.stringify(pl)); if (cd.length) localStorage.setItem('customDates', JSON.stringify(cd));
   const as = getAssists(), pf = getProfileList(); if (as.length) localStorage.setItem('assistants', JSON.stringify(as)); if (pf.length) localStorage.setItem('profile', JSON.stringify(pf));
+  const hl = getHLList(); if (hl.length) localStorage.setItem('bibleHLs', JSON.stringify(hl));
   dirtySet(d);
 }
 
@@ -181,7 +182,7 @@ const syncStore = {
   clearDirty: sent => { const d = dirtyGet(); sent.forEach(([k, s]) => { if (d[k] && d[k].seq === s) delete d[k]; }); dirtySet(d); },
   getCursor: () => localStorage.getItem('syncCursor'),
   setCursor: c => { if (c) localStorage.setItem('syncCursor', c); },
-  get(kind, id) { return ({ sermon: sermons, ilus, pray, plan: getPlans(), cdate: getCustomDates(), assist: getAssists(), profile: getProfileList() })[kind].find(x => x.id === id); },
+  get(kind, id) { return ({ sermon: sermons, ilus, pray, plan: getPlans(), cdate: getCustomDates(), assist: getAssists(), profile: getProfileList(), hl: getHLList() })[kind].find(x => x.id === id); },
   async apply(kind, id, item) { // grava o que veio de outro aparelho SEM disparar nova sincronização (usa tx direto, não dbPut)
     remoteChanged++;
     const mem = { sermon: [sermons, 'sermons'], ilus: [ilus, 'ilus'], pray: [pray, 'pray'] }[kind];
@@ -190,7 +191,7 @@ const syncStore = {
       if (item === null) { if (i >= 0) arr.splice(i, 1); await tx(store, 'readwrite', o => o.delete(id)); }
       else { if (i >= 0) { const cur = arr[i]; for (const k of Object.keys(cur)) delete cur[k]; Object.assign(cur, item); item = cur; } else arr.push(item); await tx(store, 'readwrite', o => o.put(item)); }
     } else {
-      const key = { plan: 'plans', cdate: 'customDates', assist: 'assistants', profile: 'profile' }[kind], list = JSON.parse(localStorage.getItem(key) || '[]'), i = list.findIndex(x => x.id === id);
+      const key = { plan: 'plans', cdate: 'customDates', assist: 'assistants', profile: 'profile', hl: 'bibleHLs' }[kind], list = JSON.parse(localStorage.getItem(key) || '[]'), i = list.findIndex(x => x.id === id);
       if (item === null) { if (i >= 0) list.splice(i, 1); } else if (i >= 0) list[i] = item; else list.push(item);
       localStorage.setItem(key, JSON.stringify(list));
     }

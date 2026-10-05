@@ -26,7 +26,7 @@ addEventListener('keydown', e => {
 
 /* ========== backup ========== */
 const bkpCfg = () => ({ auto: true, freq: 'daily', keep: 7, ...JSON.parse(localStorage.getItem('bkpCfg') || '{}') });
-const buildBackup = () => ({ app: 'pregar', at: new Date().toISOString(), sermons, ilus, pray, plans: getPlans(), customDates: getCustomDates(), assistants: getAssists(), profile: getProfileList(), bibleHL: getHL() });
+const buildBackup = () => ({ app: 'pregar', at: new Date().toISOString(), sermons, ilus, pray, plans: getPlans(), customDates: getCustomDates(), assistants: getAssists(), profile: getProfileList(), bibleHLs: getHLList() });
 async function applyBackup(j) { // mescla por id (o que vem do backup substitui o igual)
   if (!j || !Array.isArray(j.sermons)) throw new Error('arquivo inválido');
   const merge = async (arr, list, store) => { for (const x of list || []) { const i = arr.findIndex(y => y.id === x.id); if (i >= 0) arr[i] = x; else arr.push(x); await dbPut(store, x); } };
@@ -35,7 +35,7 @@ async function applyBackup(j) { // mescla por id (o que vem do backup substitui 
   if (Array.isArray(j.assistants)) { const cur = getAssists(); j.assistants.forEach(x => { const k = cur.findIndex(y => y.id === x.id); if (k >= 0) cur[k] = x; else cur.push(x); }); setAssists(cur); }
   if (Array.isArray(j.profile) && j.profile[0] && !getProfileList().length) setProfile(j.profile[0]);
   if (Array.isArray(j.plans)) { const cur = getPlans(); j.plans.forEach(p => { const k = cur.findIndex(x => x.id === p.id); if (k >= 0) cur[k] = p; else cur.push(p); }); setPlans(cur); }
-  if (j.bibleHL && typeof j.bibleHL === 'object') setHL({ ...getHL(), ...j.bibleHL });
+  if (Array.isArray(j.bibleHLs)) { const cur = getHLList(); j.bibleHLs.forEach(x => { const k = cur.findIndex(y => y.id === x.id); if (k < 0) cur.push(x); else if ((x.updatedAt || 0) >= (cur[k].updatedAt || 0)) cur[k] = x; }); setHLList(cur); }
   return j.sermons.length;
 }
 function downloadJSON(obj, name) { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(obj, null, 1)], { type: 'application/json' })); a.download = name; a.click(); }

@@ -757,8 +757,20 @@ function bibleModal() {
 /* ========== Bíblia: livros → capítulos → leitura com destaque de cores ========== */
 const CHAPS = [50,40,27,36,34,24,21,4,31,24,22,25,29,36,10,13,10,42,150,31,12,8,66,52,5,48,12,14,3,9,1,4,7,3,3,3,2,14,4,28,16,24,21,28,16,16,13,6,6,4,4,5,3,6,4,3,1,13,5,5,3,5,1,1,1,22]; // capítulos por livro (66)
 const HLC = { y: ['Dourado', 'rgba(216,180,92,.5)'], g: ['Verde', 'rgba(110,170,100,.45)'], b: ['Azul', 'rgba(90,150,210,.45)'], r: ['Rosa', 'rgba(220,110,140,.45)'] };
-const getHL = () => { try { return JSON.parse(localStorage.getItem('bibleHL') || '{}'); } catch { return {}; } };
-const setHL = o => localStorage.setItem('bibleHL', JSON.stringify(o));
+const HLKEY = 'bibleHLs'; // lista de {id:'livro.cap', v:{versículo:cor}, updatedAt}: um item por capítulo, sincronizável (tipo "hl")
+const getHLList = () => { try { return JSON.parse(localStorage.getItem(HLKEY) || '[]'); } catch { return []; } };
+const setHLList = list => { if (typeof syncList === 'function') syncList('hl', getHLList(), list); localStorage.setItem(HLKEY, JSON.stringify(list)); };
+const getHL = () => { const o = {}; getHLList().forEach(it => { for (const n in it.v) o[it.id + '.' + n] = it.v[n]; }); return o; }; // "livro.cap.vers" → cor
+function setHLChapter(bi, ch, fn) {
+  const list = getHLList(), id = bi + '.' + ch; let it = list.find(x => x.id === id); if (!it) { it = { id, v: {} }; list.push(it); }
+  fn(it.v); it.updatedAt = Date.now(); setHLList(list);
+}
+function migrateHL() { // migra os destaques da versão 0.18.0 (mapa único) para a lista por capítulo (roda no início, com a sincronização já carregada)
+  const old = localStorage.getItem('bibleHL'); if (old === null) return;
+  try { const m = JSON.parse(old), by = {}; for (const k in m) { const [b, c, v] = k.split('.'); (by[b + '.' + c] = by[b + '.' + c] || { id: b + '.' + c, v: {}, updatedAt: Date.now() }).v[v] = m[k]; }
+    const cur = getHLList(); Object.values(by).forEach(it => { if (!cur.some(x => x.id === it.id)) cur.push(it); }); setHLList(cur); } catch { /* mapa antigo ilegível: ignora */ }
+  localStorage.removeItem('bibleHL');
+}
 const bibleName = () => bibleVer() === 'acf' ? 'ACF' : bibleVer() === 'almeida' ? 'Almeida' : bibleVer() === 'kjv' ? 'KJV' : ((customVers().find(v => v.id === bibleVer()) || {}).name || '');
 function biblia(a, b) {
   const bi = a !== undefined && a !== '' ? +a : -1, ch = b ? +b : 0;
@@ -833,7 +845,7 @@ async function bibleReader(bi, ch) {
     if (t.id === 'hlx') { sel.clear(); return paint(); }
     if (t.id === 'hlp') { const L = d.verses.filter(v => sel.has(v.n)); if (!L.length) return; sendSlide({ kind: 'verse', title: `${book} ${ch}:${L[0].n}${L.length > 1 ? '-' + L[L.length - 1].n : ''}`, body: L.map(v => v.t).join(' ') }); return toast('Enviado ao projetor'); }
     if (t.dataset.c === undefined) return;
-    const hl = getHL(); sel.forEach(n => { if (t.dataset.c) hl[key(n)] = t.dataset.c; else delete hl[key(n)]; }); setHL(hl); sel.clear(); paint();
+    setHLChapter(bi, ch, v => sel.forEach(n => { if (t.dataset.c) v[n] = t.dataset.c; else delete v[n]; })); sel.clear(); paint();
   };
   const setSize = n => { n = Math.max(15, Math.min(40, n)); localStorage.setItem('bibleSize', n); $('#bt').style.setProperty('--bs', n + 'px'); };
   $('#fm').onclick = () => setSize((+localStorage.getItem('bibleSize') || 22) - 2); $('#fp').onclick = () => setSize((+localStorage.getItem('bibleSize') || 22) + 2);
@@ -1042,6 +1054,7 @@ $('#th').onclick = () => { const dark = (document.documentElement.dataset.theme 
   if (document.readyState === 'loading') await new Promise(r => addEventListener('DOMContentLoaded', r, { once: true })); // scripts ao fim do body: DOMContentLoaded só dispara depois de todos executarem
   sermons = await dbAll('sermons'); ilus = await dbAll('ilus'); pray = await dbAll('pray');
   if (window.__demo) await window.__demo.seed(); // modo demonstração (demo.js)
+  migrateHL();
   addEventListener('hashchange', route); route();
   if (!window.__demo && 'serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(e => console.warn('modo offline indisponível', e));
   const safe = (nome, fn) => { try { const r = fn(); if (r && r.catch) r.catch(e => console.warn(nome, e)); } catch (e) { console.warn(nome, e); } };
