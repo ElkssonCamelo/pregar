@@ -200,3 +200,10 @@ summary{cursor:pointer}
 @media(min-width:700px){.row>h1[style*="flex:1"]{flex:1 1 auto}}
 .card .grid label{font-size:.82em}
 @media(prefers-reduced-motion:reduce){body.anim *{animation:none!important;transition:none!important}}
+
+/* modo demonstração (demo.js) */
+#demobar{background:var(--acc);color:#241a05;display:flex;gap:12px;flex-wrap:wrap;justify-content:center;align-items:center;padding:6px 14px;font-size:.9em;text-align:center}
+#demobar a{color:#241a05;font-weight:650;text-decoration:underline;min-height:0}
+body.preaching #demobar,body.prompting #demobar{display:none}
+body.demo .brand::after{content:" · demonstração";font:600 12px var(--sans,sans-serif);letter-spacing:.04em;color:var(--acc);text-transform:uppercase}
+@media(max-width:420px){body.demo .brand::after{content:" · demo"}}

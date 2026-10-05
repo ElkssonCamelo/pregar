@@ -2,6 +2,11 @@
 
 Formato: [versão] - data. Versão 0.x = em construção (a sincronização na nuvem ainda não está ligada).
 
+## [0.17.0] - 2026-10-05
+### Adicionado
+- **Modo demonstração** (`index.html?demo`, ou link em Configurações): abre o app cheio de exemplos fictícios (pregação completa com slides, oração, ilustrações, datas, plano de leitura, perfil). Usa um banco separado e memória temporária, não lê nem altera seus dados e **não sincroniza** (sem login e sem nuvem); tudo recomeça limpo ao recarregar. Faixa dourada no topo e "demonstração" ao lado do nome indicam o modo.
+- `demo.js` e `demo-data.js` (dados fictícios).
+
 ## [0.16.2] - 2026-10-03
 ### Corrigido
 - Texto da tela Oração dizia que os registros ficavam só no aparelho; agora explica que entram no backup e, com a sincronização ligada, vão para a conta privada na nuvem.

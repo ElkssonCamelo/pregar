@@ -987,8 +987,9 @@ $('#th').onclick = () => { const dark = (document.documentElement.dataset.theme 
 (async () => {
   if (document.readyState === 'loading') await new Promise(r => addEventListener('DOMContentLoaded', r, { once: true })); // scripts ao fim do body: DOMContentLoaded só dispara depois de todos executarem
   sermons = await dbAll('sermons'); ilus = await dbAll('ilus'); pray = await dbAll('pray');
+  if (window.__demo) await window.__demo.seed(); // modo demonstração (demo.js)
   addEventListener('hashchange', route); route();
-  if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(e => console.warn('modo offline indisponível', e));
+  if (!window.__demo && 'serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(e => console.warn('modo offline indisponível', e));
   const safe = (nome, fn) => { try { const r = fn(); if (r && r.catch) r.catch(e => console.warn(nome, e)); } catch (e) { console.warn(nome, e); } };
   safe('lembretes', () => { reminders(); setInterval(reminders, 60000); });
   safe('sincronização', () => typeof syncStart === 'function' && syncStart());

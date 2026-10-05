@@ -88,6 +88,7 @@ async function ajustes() {
   const last = localStorage.getItem('lastAuto');
   app.innerHTML = `<h1>Configurações</h1>
   <h2>Perfil do pregador</h2><div class="card" id="profilebox"></div>
+  ${window.__demo ? '' : '<p class="mute">Quer ver o app cheio de exemplos sem mexer nos seus dados? <a href="index.html?demo">Abrir o modo demonstração</a> (nada é salvo nem sincronizado).</p>'}
   <h2>Teclado e pedal</h2><div class="card">
    <p class="mute">Valem no modo pregação e na tela de slides. Pedais e controles Bluetooth costumam enviar setas ou PageUp/PageDown: pareie no sistema, clique em “+ tecla” e aperte o pedal. Funciona também com a janela do projetor em foco.</p>
    ${Object.entries(ACTIONS).map(([a, n]) => `<div class="row" style="padding:6px 0;border-bottom:1px solid var(--line)"><span style="flex:1;min-width:170px">${n}</span>
